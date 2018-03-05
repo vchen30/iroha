@@ -50,33 +50,109 @@ namespace integration_framework {
     using BlockType = std::shared_ptr<iroha::model::Block>;
 
    public:
+    /**
+     * Construct test framework instance
+     * @param maximum_block_size - (default = 10) Maximum amount of transactions
+     * per proposal
+     */
     IntegrationTestFramework(size_t maximum_block_size = 10)
         : maximum_block_size_(maximum_block_size) {}
+
+    /**
+     * Initialize Iroha instance with default genesis block and provided signing
+     * key
+     * @param keypair - signing key
+     * @return ITF instance
+     */
     IntegrationTestFramework &setInitialState(
         const shared_model::crypto::Keypair &keypair);
+
+    /**
+     * Initialize Iroha instance with provided genesis block and signing key
+     * @param keypair - signing key
+     * @param block - genesis block used for iroha initialization
+     * @return ITF instance
+     */
     IntegrationTestFramework &setInitialState(
         const shared_model::crypto::Keypair &keypair,
         const shared_model::interface::Block &block);
 
+    /**
+     * Send transaction to Iroha and validate its status
+     * @tparam Lambda - type of status validation callback function
+     * @param tx - transaction
+     * @param validation - callback for transaction status validation that
+     * receives object of type shared_model::proto::TransactionResponse
+     * @return ITF instance
+     */
     template <typename Lambda>
     IntegrationTestFramework &sendTx(const shared_model::proto::Transaction &tx,
                                      Lambda validation);
+
+    /**
+     * Send transaction to Iroha without status validation
+     * @param tx - transaction
+     * @return ITF instance
+     */
     IntegrationTestFramework &sendTx(
         const shared_model::proto::Transaction &tx);
+
+    /**
+     * Check current status of transaction
+     * @param hash - hash of transaction to check
+     * @return TransactonResponse object
+     */
     shared_model::proto::TransactionResponse getTxStatus(
         const shared_model::crypto::Hash &hash);
 
+    /**
+     * Send query to Iroha and validate the response
+     * @tparam Lambda - type of function that handles query result
+     * @param qry - query
+     * @param validation - callback for query result check that receives object
+     * of type shared_model::proto::QueryResponse
+     * @return ITF instance
+     */
     template <typename Lambda>
     IntegrationTestFramework &sendQuery(const shared_model::proto::Query &qry,
                                         Lambda validation);
+
+    /**
+     * Send query to Iroha without response validation
+     * @param qry - query
+     * @return ITF instance
+     */
     IntegrationTestFramework &sendQuery(const shared_model::proto::Query &qry);
 
+    /**
+     * Request first proposal from queue and serve it with custom
+     * handler
+     * @tparam Lambda - type of function that operates over proposal
+     * @param validation - callback that receives object of type ProposalType
+     * @return ITF instance
+     */
     template <typename Lambda>
     IntegrationTestFramework &checkProposal(Lambda validation);
+
+    /**
+     * Request first proposal from queue
+     * @return ITF instance
+     */
     IntegrationTestFramework &skipProposal();
 
+    /**
+     * Request first block from queue and serve it with custom handler
+     * @tparam Lambda - type of function that operates over block
+     * @param validation - callback that receives object of type BlockType
+     * @return ITF instance
+     */
     template <typename Lambda>
     IntegrationTestFramework &checkBlock(Lambda validation);
+
+    /**
+     * Request first block from queue
+     * @return ITF instance
+     */
     IntegrationTestFramework &skipBlock();
 
     /**
