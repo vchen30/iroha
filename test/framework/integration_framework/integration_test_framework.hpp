@@ -39,8 +39,6 @@
 #include "backend/protobuf/query_responses/proto_query_response.hpp"
 #include "backend/protobuf/transaction.hpp"
 #include "backend/protobuf/transaction_responses/proto_tx_response.hpp"
-#include "backend/protobuf/block.hpp"
-#include "backend/protobuf/proposal.hpp"
 
 namespace integration_framework {
 
@@ -162,6 +160,7 @@ namespace integration_framework {
      */
     void done();
 
+   protected:
     /**
      * general way to fetch object from concurrent queue
      * @tparam Queue - Type of queue
@@ -178,7 +177,6 @@ namespace integration_framework {
                         const WaitTime &wait,
                         const std::string &error_reason);
 
-   protected:
     tbb::concurrent_queue<ProposalType> proposal_queue_;
     tbb::concurrent_queue<BlockType> block_queue_;
     std::shared_ptr<IrohaInstance> iroha_instance_ =
