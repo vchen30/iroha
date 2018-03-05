@@ -52,11 +52,11 @@ namespace integration_framework {
    public:
     /**
      * Construct test framework instance
-     * @param maximum_block_size - (default = 10) Maximum amount of transactions
-     * per proposal
+     * @param maximum_proposal_size - (default = 10) Maximum amount of
+     * transactions per proposal
      */
-    IntegrationTestFramework(size_t maximum_block_size = 10)
-        : maximum_block_size_(maximum_block_size) {}
+    IntegrationTestFramework(size_t maximum_proposal_size = 10)
+        : maximum_proposal_size_(maximum_proposal_size) {}
 
     /**
      * Initialize Iroha instance with default genesis block and provided signing
@@ -194,7 +194,7 @@ namespace integration_framework {
     const std::string default_domain = "test";
     const std::string default_role = "user";
 
-    size_t maximum_block_size_;
+    size_t maximum_proposal_size_;
 
    private:
     logger::Logger log_ = logger::log("IntegrationTestFramework");

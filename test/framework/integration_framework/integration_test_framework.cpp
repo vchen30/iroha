@@ -72,7 +72,7 @@ namespace integration_framework {
     log_->info("init state");
     // peer initialization
     std::shared_ptr<iroha::keypair_t> old_key(keypair.makeOldModel());
-    iroha_instance_->initPipeline(*old_key, maximum_block_size_);
+    iroha_instance_->initPipeline(*old_key, maximum_proposal_size_);
     log_->info("created pipeline");
     // iroha_instance_->clearLedger();
     // log_->info("cleared ledger");
