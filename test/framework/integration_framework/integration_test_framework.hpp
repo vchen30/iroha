@@ -160,6 +160,10 @@ namespace integration_framework {
      */
     void done();
 
+    ~IntegrationTestFramework() {
+      done();
+    }
+
    protected:
     /**
      * general way to fetch object from concurrent queue
