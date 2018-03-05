@@ -160,6 +160,7 @@ namespace integration_framework {
      */
     void done();
 
+   protected:
     /**
      * general way to fetch object from concurrent queue
      * @tparam Queue - Type of queue
@@ -176,7 +177,6 @@ namespace integration_framework {
                         const WaitTime &wait,
                         const std::string &error_reason);
 
-   protected:
     std::shared_ptr<IrohaInstance> iroha_instance_ =
         std::make_shared<IrohaInstance>();
     tbb::concurrent_queue<ProposalType> proposal_queue_;
