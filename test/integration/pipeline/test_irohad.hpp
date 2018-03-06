@@ -74,6 +74,10 @@ class TestIrohad : public Irohad {
                });
     log_->info("===> iroha initialized");
   }
+
+  void terminate() {
+    internal_server->terminate();
+  }
 };
 
 #endif  // IROHA_TESTIROHAD_HPP

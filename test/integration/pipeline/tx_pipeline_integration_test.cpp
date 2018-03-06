@@ -214,10 +214,20 @@ TEST(PipelineIntegrationTest, SendTx) {
   auto checkBlock = [](auto &block) {
     ASSERT_EQ(block->transactions.size(), 0);
   };
-  integration_framework::IntegrationTestFramework()
-      .setInitialState(kAdminKeypair)
-      .sendTx(tx, checkStatelessValid)
-      .checkProposal(checkProposal)
-      .checkBlock(checkBlock)
-      .done();
+
+  logger::Logger log = logger::log("ITF Instance Destruction");
+
+  log->info("beginning");
+  {
+    log->info("scope beginning");
+    integration_framework::IntegrationTestFramework itf;
+    itf.setInitialState(kAdminKeypair)
+        .sendTx(tx, checkStatelessValid)
+        .checkProposal(checkProposal)
+        .checkBlock(checkBlock);
+//    std::this_thread::sleep_for(100ms);
+//        .done();
+    log->info("scope end");
+  }
+  log->info("outer scope");
 }

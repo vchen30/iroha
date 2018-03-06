@@ -161,7 +161,11 @@ namespace integration_framework {
     void done();
 
     ~IntegrationTestFramework() {
-      done();
+      log_->info("ts1");
+//      iroha_instance_->instance_->terminate();
+//      done();
+//      std::this_thread::sleep_for(std::chrono::milliseconds(1));
+      log_->info("ts2");
     }
 
    protected:

@@ -53,6 +53,11 @@ class ServerRunner {
    */
   void waitForServersReady();
 
+  /**
+   * Asks grpc::Server instance to terminate
+   */
+  void terminate();
+
  private:
   std::unique_ptr<grpc::Server> serverInstance_;
   std::mutex waitForServer_;

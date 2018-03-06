@@ -61,3 +61,8 @@ void ServerRunner::waitForServersReady() {
     serverInstanceCV_.wait(lock);
   }
 }
+
+void ServerRunner::terminate() {
+  serverInstance_->Shutdown();
+  serverInstance_->Wait(); // probably there is no need to wait
+}
