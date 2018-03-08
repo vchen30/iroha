@@ -54,9 +54,15 @@ namespace integration_framework {
      * Construct test framework instance
      * @param maximum_proposal_size - (default = 10) Maximum amount of
      * transactions per proposal
+     * @param destructor_lambda - (default nullptr) Pointer to function which
+     * receives pointer to constructed instance of Integration Test Framework.
+     * If specified, then will be called instead of default destructor's code
      */
-    IntegrationTestFramework(size_t maximum_proposal_size = 10)
-        : maximum_proposal_size_(maximum_proposal_size) {}
+    explicit IntegrationTestFramework(
+        size_t maximum_proposal_size = 10,
+        void (*destructor_lambda)(IntegrationTestFramework *) = nullptr)
+        : maximum_proposal_size_(maximum_proposal_size),
+          destructor_lambda_(destructor_lambda) {}
 
     /**
      * Initialize Iroha instance with default genesis block and provided signing
@@ -160,8 +166,12 @@ namespace integration_framework {
      */
     void done();
 
-    ~IntegrationTestFramework() {
-      done();
+    virtual ~IntegrationTestFramework() {
+      if (destructor_lambda_) {
+        destructor_lambda_(this);
+      } else {
+        done();
+      }
     }
 
    protected:
@@ -204,6 +214,7 @@ namespace integration_framework {
     logger::Logger log_ = logger::log("IntegrationTestFramework");
     std::mutex queue_mu;
     std::condition_variable queue_cond;
+    void (*destructor_lambda_)(IntegrationTestFramework *);
   };
 
   template <typename Lambda>
