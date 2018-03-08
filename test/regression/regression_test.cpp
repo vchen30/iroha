@@ -66,3 +66,14 @@ TEST(RegressionTest, SequentialInitialization) {
         .done();
   }
 }
+
+/**
+ * @given ITF instance with Iroha
+ * @when done method is called twice
+ * @then no errors are caused as the result
+ */
+TEST(RegressionTest, DoubleCallOfDone) {
+  integration_framework::IntegrationTestFramework itf;
+  itf.setInitialState(kAdminKeypair).done();
+  itf.done();
+}
