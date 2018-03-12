@@ -61,9 +61,9 @@ namespace integration_framework {
      */
     explicit IntegrationTestFramework(
         size_t maximum_proposal_size = 10,
-        void (*destructor_lambda)(IntegrationTestFramework *) = nullptr)
-        : maximum_proposal_size_(maximum_proposal_size),
-          destructor_lambda_(destructor_lambda) {}
+        const std::function<void(IntegrationTestFramework *)> &deleter =
+            nullptr)
+        : maximum_proposal_size_(maximum_proposal_size), deleter_(deleter) {}
 
     /**
      * Initialize Iroha instance with default genesis block and provided signing
@@ -209,7 +209,7 @@ namespace integration_framework {
     logger::Logger log_ = logger::log("IntegrationTestFramework");
     std::mutex queue_mu;
     std::condition_variable queue_cond;
-    void (*destructor_lambda_)(IntegrationTestFramework *);
+    std::function<void(IntegrationTestFramework *)> deleter_;
   };
 
   template <typename Queue, typename ObjectType, typename WaitTime>

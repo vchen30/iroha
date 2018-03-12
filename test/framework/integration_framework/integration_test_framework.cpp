@@ -204,8 +204,8 @@ namespace integration_framework {
   }
 
   IntegrationTestFramework::~IntegrationTestFramework() {
-    if (destructor_lambda_) {
-      destructor_lambda_(this);
+    if (deleter_) {
+      deleter_(this);
     } else {
       done();
     }
