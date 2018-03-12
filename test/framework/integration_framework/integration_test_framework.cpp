@@ -32,6 +32,7 @@ using namespace shared_model::crypto;
 using namespace std::literals::string_literals;
 
 namespace integration_framework {
+
   IntegrationTestFramework &IntegrationTestFramework::setInitialState(
       const shared_model::crypto::Keypair &key) {
     auto genesis_tx =
@@ -124,8 +125,39 @@ namespace integration_framework {
   }
 
   IntegrationTestFramework &IntegrationTestFramework::sendTx(
+      const shared_model::proto::Transaction &tx,
+      const std::function<void(shared_model::proto::TransactionResponse &)>
+          &validation) {
+    log_->info("send transaction");
+    iroha_instance_->getIrohaInstance()->getCommandService()->Torii(
+        tx.getTransport());
+    // fetch status of transaction
+    shared_model::proto::TransactionResponse status = getTxStatus(tx.hash());
+
+    // check validation function
+    validation(status);
+    return *this;
+  }
+
+  IntegrationTestFramework &IntegrationTestFramework::sendTx(
       const shared_model::proto::Transaction &tx) {
     sendTx(tx, [](const auto &) {});
+    return *this;
+  }
+
+  IntegrationTestFramework &IntegrationTestFramework::sendQuery(
+      const shared_model::proto::Query &qry,
+      const std::function<void(shared_model::proto::QueryResponse &)>
+          &validation) {
+    log_->info("send query");
+
+    iroha::protocol::QueryResponse response;
+    iroha_instance_->getIrohaInstance()->getQueryService()->Find(
+        qry.getTransport(), response);
+    auto query_response =
+        shared_model::proto::QueryResponse(std::move(response));
+
+    validation(query_response);
     return *this;
   }
 
@@ -135,8 +167,29 @@ namespace integration_framework {
     return *this;
   }
 
+  IntegrationTestFramework &IntegrationTestFramework::checkProposal(
+      const std::function<void(ProposalType &)> &validation) {
+    log_->info("check proposal");
+    // fetch first proposal from proposal queue
+    ProposalType proposal;
+    fetchFromQueue(
+        proposal_queue_, proposal, proposal_waiting, "missed proposal");
+    validation(proposal);
+    return *this;
+  }
+
   IntegrationTestFramework &IntegrationTestFramework::skipProposal() {
     checkProposal([](const auto &) {});
+    return *this;
+  }
+
+  IntegrationTestFramework &IntegrationTestFramework::checkBlock(
+      const std::function<void(BlockType &)> &validation) {
+    // fetch first from block queue
+    log_->info("check block");
+    BlockType block;
+    fetchFromQueue(block_queue_, block, block_waiting, "missed block");
+    validation(block);
     return *this;
   }
 
@@ -148,5 +201,13 @@ namespace integration_framework {
   void IntegrationTestFramework::done() {
     log_->info("done");
     iroha_instance_->instance_->storage->dropStorage();
+  }
+
+  IntegrationTestFramework::~IntegrationTestFramework() {
+    if (destructor_lambda_) {
+      destructor_lambda_(this);
+    } else {
+      done();
+    }
   }
 }  // namespace integration_framework

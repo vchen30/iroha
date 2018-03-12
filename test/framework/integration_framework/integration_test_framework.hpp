@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <chrono>
 #include <exception>
+#include <functional>
 #include <queue>
 #include <string>
 #include <thread>
@@ -85,15 +86,16 @@ namespace integration_framework {
 
     /**
      * Send transaction to Iroha and validate its status
-     * @tparam Lambda - type of status validation callback function
      * @param tx - transaction
      * @param validation - callback for transaction status validation that
      * receives object of type \relates shared_model::proto::TransactionResponse
+     * by reference
      * @return this
      */
-    template <typename Lambda>
-    IntegrationTestFramework &sendTx(const shared_model::proto::Transaction &tx,
-                                     Lambda validation);
+    IntegrationTestFramework &sendTx(
+        const shared_model::proto::Transaction &tx,
+        const std::function<void(shared_model::proto::TransactionResponse &)>
+            &validation);
 
     /**
      * Send transaction to Iroha without status validation
@@ -113,15 +115,15 @@ namespace integration_framework {
 
     /**
      * Send query to Iroha and validate the response
-     * @tparam Lambda - type of function that handles query result
      * @param qry - query
      * @param validation - callback for query result check that receives object
-     * of type \relates shared_model::proto::QueryResponse
+     * of type \relates shared_model::proto::QueryResponse by reference
      * @return this
      */
-    template <typename Lambda>
-    IntegrationTestFramework &sendQuery(const shared_model::proto::Query &qry,
-                                        Lambda validation);
+    IntegrationTestFramework &sendQuery(
+        const shared_model::proto::Query &qry,
+        const std::function<void(shared_model::proto::QueryResponse &)>
+            &validation);
 
     /**
      * Send query to Iroha without response validation
@@ -132,13 +134,12 @@ namespace integration_framework {
 
     /**
      * Request next proposal from queue and serve it with custom handler
-     * @tparam Lambda - type of function that operates over proposal
      * @param validation - callback that receives object of type \relates
-     * ProposalType
+     * std::shared_ptr<shared_model::interface::Proposal> by reference
      * @return this
      */
-    template <typename Lambda>
-    IntegrationTestFramework &checkProposal(Lambda validation);
+    IntegrationTestFramework &checkProposal(
+        const std::function<void(ProposalType &)> &validation);
 
     /**
      * Request next proposal from queue and skip it
@@ -148,13 +149,12 @@ namespace integration_framework {
 
     /**
      * Request next block from queue and serve it with custom handler
-     * @tparam Lambda - type of function that operates over block
      * @param validation - callback that receives object of type \relates
-     * BlockType
+     * std::shared_ptr<shared_model::interface::Block> by reference
      * @return this
      */
-    template <typename Lambda>
-    IntegrationTestFramework &checkBlock(Lambda validation);
+    IntegrationTestFramework &checkBlock(
+        const std::function<void(BlockType &)> &validation);
 
     /**
      * Request next block from queue and skip it
@@ -167,13 +167,7 @@ namespace integration_framework {
      */
     void done();
 
-    virtual ~IntegrationTestFramework() {
-      if (destructor_lambda_) {
-        destructor_lambda_(this);
-      } else {
-        done();
-      }
-    }
+    virtual ~IntegrationTestFramework();
 
    protected:
     /**
@@ -217,58 +211,6 @@ namespace integration_framework {
     std::condition_variable queue_cond;
     void (*destructor_lambda_)(IntegrationTestFramework *);
   };
-
-  template <typename Lambda>
-  IntegrationTestFramework &IntegrationTestFramework::sendTx(
-      const shared_model::proto::Transaction &tx, Lambda validation) {
-    log_->info("send transaction");
-    iroha_instance_->getIrohaInstance()->getCommandService()->Torii(
-        tx.getTransport());
-    // fetch status of transaction
-    shared_model::proto::TransactionResponse status = getTxStatus(tx.hash());
-
-    // check validation function
-    validation(status);
-    return *this;
-  }
-
-  template <typename Lambda>
-  IntegrationTestFramework &IntegrationTestFramework::sendQuery(
-      const shared_model::proto::Query &qry, Lambda validation) {
-    log_->info("send query");
-
-    iroha::protocol::QueryResponse response;
-    iroha_instance_->getIrohaInstance()->getQueryService()->Find(
-        qry.getTransport(), response);
-    auto query_response =
-        shared_model::proto::QueryResponse(std::move(response));
-
-    validation(query_response);
-    return *this;
-  }
-
-  template <typename Lambda>
-  IntegrationTestFramework &IntegrationTestFramework::checkBlock(
-      Lambda validation) {
-    // fetch first from block queue
-    log_->info("check block");
-    BlockType block;
-    fetchFromQueue(block_queue_, block, block_waiting, "missed block");
-    validation(block);
-    return *this;
-  }
-
-  template <typename Lambda>
-  IntegrationTestFramework &IntegrationTestFramework::checkProposal(
-      Lambda validation) {
-    log_->info("check proposal");
-    // fetch first proposal from proposal queue
-    ProposalType proposal;
-    fetchFromQueue(
-        proposal_queue_, proposal, proposal_waiting, "missed proposal");
-    validation(proposal);
-    return *this;
-  }
 
   template <typename Queue, typename ObjectType, typename WaitTime>
   void IntegrationTestFramework::fetchFromQueue(
