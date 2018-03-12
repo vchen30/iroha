@@ -36,7 +36,7 @@
 #include "backend/protobuf/transaction_responses/proto_tx_response.hpp"
 #include "crypto/keys_manager_impl.hpp"
 #include "cryptography/blob.hpp"
-#include "cryptography/ed25519_sha3_impl/internal/sha3_hash.hpp"
+#include "cryptography/crypto_provider/crypto_defaults.hpp"
 #include "cryptography/keypair.hpp"
 #include "framework/integration_framework/iroha_instance.hpp"
 #include "logger/logger.hpp"
