@@ -18,7 +18,6 @@
 #ifndef IROHA_INTEGRATION_FRAMEWORK_HPP
 #define IROHA_INTEGRATION_FRAMEWORK_HPP
 
-#include <tbb/concurrent_queue.h>
 #include <algorithm>
 #include <chrono>
 #include <exception>
@@ -26,19 +25,20 @@
 #include <string>
 #include <thread>
 #include <vector>
-#include "crypto/keys_manager_impl.hpp"
-#include "cryptography/blob.hpp"
-#include "cryptography/ed25519_sha3_impl/internal/sha3_hash.hpp"
-#include "cryptography/keypair.hpp"
-#include "framework/integration_framework/iroha_instance.hpp"
-#include "logger/logger.hpp"
 
+#include <tbb/concurrent_queue.h>
 #include "backend/protobuf/block.hpp"
 #include "backend/protobuf/proposal.hpp"
 #include "backend/protobuf/queries/proto_query.hpp"
 #include "backend/protobuf/query_responses/proto_query_response.hpp"
 #include "backend/protobuf/transaction.hpp"
 #include "backend/protobuf/transaction_responses/proto_tx_response.hpp"
+#include "crypto/keys_manager_impl.hpp"
+#include "cryptography/blob.hpp"
+#include "cryptography/ed25519_sha3_impl/internal/sha3_hash.hpp"
+#include "cryptography/keypair.hpp"
+#include "framework/integration_framework/iroha_instance.hpp"
+#include "logger/logger.hpp"
 
 namespace integration_framework {
 
@@ -68,7 +68,7 @@ namespace integration_framework {
      * Initialize Iroha instance with default genesis block and provided signing
      * key
      * @param keypair - signing key
-     * @return ITF instance
+     * @return this
      */
     IntegrationTestFramework &setInitialState(
         const shared_model::crypto::Keypair &keypair);
@@ -77,7 +77,7 @@ namespace integration_framework {
      * Initialize Iroha instance with provided genesis block and signing key
      * @param keypair - signing key
      * @param block - genesis block used for iroha initialization
-     * @return ITF instance
+     * @return this
      */
     IntegrationTestFramework &setInitialState(
         const shared_model::crypto::Keypair &keypair,
@@ -88,8 +88,8 @@ namespace integration_framework {
      * @tparam Lambda - type of status validation callback function
      * @param tx - transaction
      * @param validation - callback for transaction status validation that
-     * receives object of type shared_model::proto::TransactionResponse
-     * @return ITF instance
+     * receives object of type \relates shared_model::proto::TransactionResponse
+     * @return this
      */
     template <typename Lambda>
     IntegrationTestFramework &sendTx(const shared_model::proto::Transaction &tx,
@@ -98,7 +98,7 @@ namespace integration_framework {
     /**
      * Send transaction to Iroha without status validation
      * @param tx - transaction
-     * @return ITF instance
+     * @return this
      */
     IntegrationTestFramework &sendTx(
         const shared_model::proto::Transaction &tx);
@@ -116,8 +116,8 @@ namespace integration_framework {
      * @tparam Lambda - type of function that handles query result
      * @param qry - query
      * @param validation - callback for query result check that receives object
-     * of type shared_model::proto::QueryResponse
-     * @return ITF instance
+     * of type \relates shared_model::proto::QueryResponse
+     * @return this
      */
     template <typename Lambda>
     IntegrationTestFramework &sendQuery(const shared_model::proto::Query &qry,
@@ -126,43 +126,44 @@ namespace integration_framework {
     /**
      * Send query to Iroha without response validation
      * @param qry - query
-     * @return ITF instance
+     * @return this
      */
     IntegrationTestFramework &sendQuery(const shared_model::proto::Query &qry);
 
     /**
-     * Request first proposal from queue and serve it with custom
-     * handler
+     * Request next proposal from queue and serve it with custom handler
      * @tparam Lambda - type of function that operates over proposal
-     * @param validation - callback that receives object of type ProposalType
-     * @return ITF instance
+     * @param validation - callback that receives object of type \relates
+     * ProposalType
+     * @return this
      */
     template <typename Lambda>
     IntegrationTestFramework &checkProposal(Lambda validation);
 
     /**
-     * Request first proposal from queue
-     * @return ITF instance
+     * Request next proposal from queue and skip it
+     * @return this
      */
     IntegrationTestFramework &skipProposal();
 
     /**
-     * Request first block from queue and serve it with custom handler
+     * Request next block from queue and serve it with custom handler
      * @tparam Lambda - type of function that operates over block
-     * @param validation - callback that receives object of type BlockType
-     * @return ITF instance
+     * @param validation - callback that receives object of type \relates
+     * BlockType
+     * @return this
      */
     template <typename Lambda>
     IntegrationTestFramework &checkBlock(Lambda validation);
 
     /**
-     * Request first block from queue
-     * @return ITF instance
+     * Request next block from queue and skip it
+     * @return this
      */
     IntegrationTestFramework &skipBlock();
 
     /**
-     * Shutdown iroha
+     * Shutdown ITF instance
      */
     void done();
 
@@ -183,7 +184,7 @@ namespace integration_framework {
      * @param queue - queue instance for fetching
      * @param ref_for_insertion - reference to insert object
      * @param wait - time of waiting
-     * @param error_reason - reason if thehre is no appeared object at all
+     * @param error_reason - reason if there is no appeared object at all
      */
     template <typename Queue, typename ObjectType, typename WaitTime>
     void fetchFromQueue(Queue &queue,

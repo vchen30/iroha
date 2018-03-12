@@ -18,6 +18,7 @@
 #include "framework/integration_framework/integration_test_framework.hpp"
 
 #include <memory>
+
 #include "builders/protobuf/block.hpp"
 #include "builders/protobuf/proposal.hpp"
 #include "builders/protobuf/transaction.hpp"
