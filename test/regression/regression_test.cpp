@@ -58,12 +58,7 @@ TEST(RegressionTest, SequentialInitialization) {
   };
   {
     integration_framework::IntegrationTestFramework(
-        10,
-        [](integration_framework::IntegrationTestFramework *this_) {
-          /* TODO Igor Egorov, 08.03.2018, IR-1085
-           * find another way to shutdown ITF without hang */
-          std::this_thread::sleep_for(std::chrono::milliseconds(200));
-        })
+        10, [](integration_framework::IntegrationTestFramework *) {})
         .setInitialState(kAdminKeypair)
         .sendTx(tx, checkStatelessValid)
         .skipProposal()

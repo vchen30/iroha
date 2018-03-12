@@ -215,5 +215,9 @@ namespace integration_framework {
     } else {
       done();
     }
+    // the code below should be executed anyway in order to prevent app hang
+    if (iroha_instance_ && iroha_instance_->instance_) {
+      iroha_instance_->instance_->terminate();
+    }
   }
 }  // namespace integration_framework
