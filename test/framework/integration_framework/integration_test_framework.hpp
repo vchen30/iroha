@@ -94,7 +94,7 @@ namespace integration_framework {
 
     /**
      * Send transaction to Iroha and validate its status
-     * @param tx - transaction
+     * @param tx - transaction for sending
      * @param validation - callback for transaction status validation that
      * receives object of type \relates shared_model::proto::TransactionResponse
      * by reference
@@ -107,7 +107,7 @@ namespace integration_framework {
 
     /**
      * Send transaction to Iroha without status validation
-     * @param tx - transaction
+     * @param tx - transaction for sending
      * @return this
      */
     IntegrationTestFramework &sendTx(
@@ -123,7 +123,7 @@ namespace integration_framework {
 
     /**
      * Send query to Iroha and validate the response
-     * @param qry - query
+     * @param qry - query to be requested
      * @param validation - callback for query result check that receives object
      * of type \relates shared_model::proto::QueryResponse by reference
      * @return this
@@ -135,7 +135,7 @@ namespace integration_framework {
 
     /**
      * Send query to Iroha without response validation
-     * @param qry - query
+     * @param qry - query to be requested
      * @return this
      */
     IntegrationTestFramework &sendQuery(const shared_model::proto::Query &qry);
