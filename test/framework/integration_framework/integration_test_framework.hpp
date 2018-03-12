@@ -66,6 +66,14 @@ namespace integration_framework {
         : maximum_proposal_size_(maximum_proposal_size), deleter_(deleter) {}
 
     /**
+    * Construct default genesis block
+    * @param key - signing key
+    * @return signed genesis block
+    */
+    virtual shared_model::proto::Block defaultBlock(
+        const shared_model::crypto::Keypair &key) const;
+
+    /**
      * Initialize Iroha instance with default genesis block and provided signing
      * key
      * @param keypair - signing key

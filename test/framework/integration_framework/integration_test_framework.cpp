@@ -33,8 +33,8 @@ using namespace std::literals::string_literals;
 
 namespace integration_framework {
 
-  IntegrationTestFramework &IntegrationTestFramework::setInitialState(
-      const shared_model::crypto::Keypair &key) {
+  shared_model::proto::Block IntegrationTestFramework::defaultBlock(
+      const shared_model::crypto::Keypair &key) const {
     auto genesis_tx =
         shared_model::proto::TransactionBuilder()
             .creatorAccountId("admin@test")
@@ -66,7 +66,13 @@ namespace integration_framework {
             .createdTime(iroha::time::now())
             .build()
             .signAndAddSignature(key);
-    return setInitialState(key, genesis_block);
+    return genesis_block;
+  }
+
+  IntegrationTestFramework &IntegrationTestFramework::setInitialState(
+      const Keypair &keypair) {
+    return setInitialState(keypair,
+                           IntegrationTestFramework::defaultBlock(keypair));
   }
 
   IntegrationTestFramework &IntegrationTestFramework::setInitialState(
