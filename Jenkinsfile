@@ -12,7 +12,7 @@
 //   |      |----Release
 properties([parameters([
   choice(choices: 'Debug\nRelease', description: '', name: 'BUILD_TYPE'),
-  booleanParam(defaultValue: true, description: '', name: 'Linux'),
+  booleanParam(defaultValue: false, description: '', name: 'Linux'),
   booleanParam(defaultValue: false, description: '', name: 'ARMv7'),
   booleanParam(defaultValue: false, description: '', name: 'ARMv8'),
   booleanParam(defaultValue: true, description: '', name: 'MacOS'),
@@ -175,6 +175,7 @@ pipeline {
               """
               sh "/usr/local/bin/cmake --build build -- -j${params.PARALLELISM}"
               sh "/usr/local/bin/ccache --show-stats"
+              sh "/usr/local/bin/lcov --capture --initial --directory build --config-file .lcovrc --output-file build/reports/coverage_init.info"
               sh """
                 export IROHA_POSTGRES_PASSWORD=${IROHA_POSTGRES_PASSWORD}; \
                 export IROHA_POSTGRES_USER=${IROHA_POSTGRES_USER}; \
@@ -200,10 +201,10 @@ pipeline {
                   """
                 }
                 sh "/usr/local/bin/lcov --capture --directory build --config-file .lcovrc --output-file build/reports/coverage_full.info"
-                sh "/usr/local/bin/lcov --remove build/reports/coverage_full.info '/usr/*' 'schema/*' --config-file .lcovrc -o build/reports/coverage_full_filtered.info"
-                sh "python /usr/local/bin/lcov_cobertura.py build/reports/coverage_full_filtered.info -o build/reports/coverage.xml"                
+                sh "/usr/local/bin/lcov -a build/reports/coverage_init.info -a build/reports/coverage_full.info --output-file build/reports/coverage_full.info"
+                sh "/usr/local/bin/lcov --remove build/reports/coverage_full.info '/usr/*' 'schema/*' --config-file .lcovrc -o build/reports/coverage_full.info"
+                sh "python /usr/local/bin/lcov_cobertura.py build/reports/coverage_full.info -o build/reports/coverage.xml"
                 cobertura autoUpdateHealth: false, autoUpdateStability: false, coberturaReportFile: '**/build/reports/coverage.xml', conditionalCoverageTargets: '75, 50, 0', failUnhealthy: false, failUnstable: false, lineCoverageTargets: '75, 50, 0', maxNumberOfBuilds: 50, methodCoverageTargets: '75, 50, 0', onlyStable: false, zoomCoverageChart: false
-
               }
               
               // TODO: replace with upload to artifactory server
