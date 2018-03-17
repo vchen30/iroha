@@ -1,21 +1,21 @@
 // Overall pipeline looks like the following
 //         
 //   |--Linux-----|----Debug
-//   |      |----Release 
+//   |            |----Release 
 //   |  OR
 //   |       
 //-- |--Linux ARM-|----Debug
-//   |      |----Release
+//   |            |----Release
 //   |  OR
 //   |
 //   |--MacOS-----|----Debug
-//   |      |----Release
+//   |            |----Release
 properties([parameters([
   choice(choices: 'Debug\nRelease', description: '', name: 'BUILD_TYPE'),
   booleanParam(defaultValue: true, description: '', name: 'Linux'),
   booleanParam(defaultValue: false, description: '', name: 'ARMv7'),
   booleanParam(defaultValue: false, description: '', name: 'ARMv8'),
-  booleanParam(defaultValue: true, description: '', name: 'MacOS'),
+  booleanParam(defaultValue: false, description: '', name: 'MacOS'),
   booleanParam(defaultValue: false, description: 'Whether build docs or not', name: 'Doxygen'),
   booleanParam(defaultValue: false, description: 'Whether build Java bindings', name: 'JavaBindings'),
   booleanParam(defaultValue: false, description: 'Whether build Python bindings', name: 'PythonBindings'),

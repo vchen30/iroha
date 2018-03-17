@@ -5,6 +5,7 @@ def doDebugBuild(coverageEnabled=false) {
   if ("arm7" in env.NODE_NAME) {
     parallelism = 1
   }
+  sh "echo local parallelism is ${parallelism}"
   sh "docker network create ${env.IROHA_NETWORK}"
 
   docker.image('postgres:9.5').run(""
