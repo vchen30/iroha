@@ -1,21 +1,36 @@
 // Overall pipeline looks like the following
 //         
 //   |--Linux-----|----Debug
+<<<<<<< HEAD
+//   |      |----Release 
+//   |  OR
+//   |       
+//-- |--Linux ARM-|----Debug
+//   |      |----Release
+=======
 //   |            |----Release 
 //   |  OR
 //   |       
 //-- |--Linux ARM-|----Debug
 //   |            |----Release
+>>>>>>> feature/ops
 //   |  OR
 //   |
 //   |--MacOS-----|----Debug
-//   |            |----Release
+//   |      |----Release
 properties([parameters([
   choice(choices: 'Debug\nRelease', description: '', name: 'BUILD_TYPE'),
+<<<<<<< HEAD
   booleanParam(defaultValue: false, description: '', name: 'Linux'),
   booleanParam(defaultValue: false, description: '', name: 'ARMv7'),
   booleanParam(defaultValue: false, description: '', name: 'ARMv8'),
   booleanParam(defaultValue: true, description: '', name: 'MacOS'),
+=======
+  booleanParam(defaultValue: true, description: '', name: 'Linux'),
+  booleanParam(defaultValue: false, description: '', name: 'ARMv7'),
+  booleanParam(defaultValue: false, description: '', name: 'ARMv8'),
+  booleanParam(defaultValue: false, description: '', name: 'MacOS'),
+>>>>>>> feature/ops
   booleanParam(defaultValue: false, description: 'Whether build docs or not', name: 'Doxygen'),
   booleanParam(defaultValue: false, description: 'Whether build Java bindings', name: 'JavaBindings'),
   booleanParam(defaultValue: false, description: 'Whether build Python bindings', name: 'PythonBindings'),
@@ -76,6 +91,7 @@ pipeline {
                 releaseBuild = load ".jenkinsci/release-build.groovy"
                 releaseBuild.doReleaseBuild()
               }
+<<<<<<< HEAD
             }
           }
           post {
@@ -87,6 +103,19 @@ pipeline {
               }
             }
           }
+=======
+            }
+          }
+          post {
+            always {
+              script {
+                def cleanup = load ".jenkinsci/docker-cleanup.groovy"
+                cleanup.doDockerCleanup()
+                cleanWs()
+              }
+            }
+          }
+>>>>>>> feature/ops
         }
         stage('ARMv7') {
           when { expression { return params.ARMv7 } }
@@ -104,6 +133,7 @@ pipeline {
                 releaseBuild = load ".jenkinsci/release-build.groovy"
                 releaseBuild.doReleaseBuild()
               }
+<<<<<<< HEAD
             }
           }
           post {
@@ -143,6 +173,47 @@ pipeline {
               }
             }
           }
+=======
+            }
+          }
+          post {
+            always {
+              script {
+                def cleanup = load ".jenkinsci/docker-cleanup.groovy"
+                cleanup.doDockerCleanup()
+                cleanWs()
+              }
+            }
+          }
+        }
+        stage('ARMv8') {
+          when { expression { return params.ARMv8 } }
+          agent { label 'armv8' }
+          steps {
+            script {
+              def debugBuild = load ".jenkinsci/debug-build.groovy"
+              if (!params.Linux && !params.MacOS) {
+                debugBuild.doDebugBuild(true)
+              }
+              else {
+                debugBuild.doDebugBuild()
+              }
+              if (BRANCH_NAME ==~ /(master|develop)/) {
+                releaseBuild = load ".jenkinsci/release-build.groovy"
+                releaseBuild.doReleaseBuild()
+              }
+            }
+          }
+          post {
+            always {
+              script {
+                def cleanup = load ".jenkinsci/docker-cleanup.groovy"
+                cleanup.doDockerCleanup()
+                cleanWs()
+              }
+            }
+          }
+>>>>>>> feature/ops
         }
         stage('MacOS'){
           when { expression { return params.MacOS } }
@@ -175,7 +246,10 @@ pipeline {
               """
               sh "/usr/local/bin/cmake --build build -- -j${params.PARALLELISM}"
               sh "/usr/local/bin/ccache --show-stats"
+<<<<<<< HEAD
               sh "/usr/local/bin/lcov --capture --initial --directory build --config-file .lcovrc --output-file build/reports/coverage_init.info"
+=======
+>>>>>>> feature/ops
               sh """
                 export IROHA_POSTGRES_PASSWORD=${IROHA_POSTGRES_PASSWORD}; \
                 export IROHA_POSTGRES_USER=${IROHA_POSTGRES_USER}; \
@@ -201,10 +275,17 @@ pipeline {
                   """
                 }
                 sh "/usr/local/bin/lcov --capture --directory build --config-file .lcovrc --output-file build/reports/coverage_full.info"
-                sh "/usr/local/bin/lcov -a build/reports/coverage_init.info -a build/reports/coverage_full.info --config-file .lcovrc --output-file build/reports/coverage_full.info"
+<<<<<<< HEAD
+                sh "/usr/local/bin/lcov -a build/reports/coverage_init.info -a build/reports/coverage_full.info --output-file build/reports/coverage_full.info"
                 sh "/usr/local/bin/lcov --remove build/reports/coverage_full.info '/usr/*' 'schema/*' --config-file .lcovrc -o build/reports/coverage_full.info"
                 sh "python /usr/local/bin/lcov_cobertura.py build/reports/coverage_full.info -o build/reports/coverage.xml"
                 cobertura autoUpdateHealth: false, autoUpdateStability: false, coberturaReportFile: '**/build/reports/coverage.xml', conditionalCoverageTargets: '75, 50, 0', failUnhealthy: false, failUnstable: false, lineCoverageTargets: '75, 50, 0', maxNumberOfBuilds: 50, methodCoverageTargets: '75, 50, 0', onlyStable: false, zoomCoverageChart: false
+=======
+                sh "/usr/local/bin/lcov --remove build/reports/coverage_full.info '/usr/*' 'schema/*' --config-file .lcovrc -o build/reports/coverage_full_filtered.info"
+                sh "python /usr/local/bin/lcov_cobertura.py build/reports/coverage_full_filtered.info -o build/reports/coverage.xml"                
+                cobertura autoUpdateHealth: false, autoUpdateStability: false, coberturaReportFile: '**/build/reports/coverage.xml', conditionalCoverageTargets: '75, 50, 0', failUnhealthy: false, failUnstable: false, lineCoverageTargets: '75, 50, 0', maxNumberOfBuilds: 50, methodCoverageTargets: '75, 50, 0', onlyStable: false, zoomCoverageChart: false
+
+>>>>>>> feature/ops
               }
               
               // TODO: replace with upload to artifactory server

@@ -19,13 +19,21 @@ def doDebugBuild(coverageEnabled=false) {
   // speeds up consequent image builds as we simply tag them 
   sh "docker pull ${DOCKER_BASE_IMAGE_DEVELOP}"
   if (env.BRANCH_NAME == 'develop') {
+<<<<<<< HEAD
+    iC = docker.build("hyperledger/iroha:${GIT_COMMIT}-${BUILD_NUMBER}", "--build-arg PARALLELISM=${parallelism} -f /tmp/${env.GIT_COMMIT}/Dockerfile /tmp/${env.GIT_COMMIT}")
+=======
     iC = docker.build("hyperledger/iroha:${GIT_COMMIT}-${BUILD_NUMBER}", "--build-arg PARALLELISM=${env.parallelism} -f /tmp/${env.GIT_COMMIT}/Dockerfile /tmp/${env.GIT_COMMIT}")
+>>>>>>> feature/ops
     docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
       iC.push("${platform}-develop")
     }
   }
   else {
+<<<<<<< HEAD
+    iC = docker.build("hyperledger/iroha-workflow:${GIT_COMMIT}-${BUILD_NUMBER}", "-f /tmp/${env.GIT_COMMIT}/Dockerfile /tmp/${env.GIT_COMMIT} --build-arg PARALLELISM=${parallelism}")
+=======
     iC = docker.build("hyperledger/iroha-workflow:${GIT_COMMIT}-${BUILD_NUMBER}", "-f /tmp/${env.GIT_COMMIT}/Dockerfile /tmp/${env.GIT_COMMIT} --build-arg PARALLELISM=${env.parallelism}")
+>>>>>>> feature/ops
   }
   iC.inside(""
     + " -e IROHA_POSTGRES_HOST=${env.IROHA_POSTGRES_HOST}"
@@ -55,6 +63,14 @@ def doDebugBuild(coverageEnabled=false) {
         -DCMAKE_BUILD_TYPE=Debug \
         -DIROHA_VERSION=${env.IROHA_VERSION}
     """
+<<<<<<< HEAD
+    sh "cmake --build build -- -j${parallelism}"
+    sh "ccache --show-stats"
+    sh "lcov --capture --initial --directory build --config-file .lcovrc --output-file build/reports/coverage_init.info"
+    sh "cmake --build build --target test"
+    sh "cmake --build build --target cppcheck"
+
+=======
     sh "cmake --build build -- -j${env.parallelism}"
     sh "ccache --show-stats"
     def testExitCode = sh(script: 'cmake --build build --target test', returnStatus: true)
@@ -62,7 +78,8 @@ def doDebugBuild(coverageEnabled=false) {
       currentBuild.result = "UNSTABLE"
     }
     sh "cmake --build build --target cppcheck"
-
+    
+>>>>>>> feature/ops
     if ( coverageEnabled ) {
       // Sonar
       if (env.CHANGE_ID != null) {
@@ -79,9 +96,14 @@ def doDebugBuild(coverageEnabled=false) {
       }
 
       sh "lcov --capture --directory build --config-file .lcovrc --output-file build/reports/coverage_full.info"
+<<<<<<< HEAD
       sh "lcov -a build/reports/coverage_init.info -a build/reports/coverage_full.info --config-file .lcovrc --output-file build/reports/coverage_full.info"
       sh "lcov --remove build/reports/coverage_full.info '/usr/*' 'schema/*' --config-file .lcovrc -o build/reports/coverage_full.info"
       sh "python /tmp/lcov_cobertura.py build/reports/coverage_full.info -o build/reports/coverage.xml"                
+=======
+      sh "lcov --remove build/reports/coverage_full.info '/usr/*' 'schema/*' --config-file .lcovrc -o build/reports/coverage_full_filtered.info"
+      sh "python /tmp/lcov_cobertura.py build/reports/coverage_full_filtered.info -o build/reports/coverage.xml"                
+>>>>>>> feature/ops
       cobertura autoUpdateHealth: false, autoUpdateStability: false, coberturaReportFile: '**/build/reports/coverage.xml', conditionalCoverageTargets: '75, 50, 0', failUnhealthy: false, failUnstable: false, lineCoverageTargets: '75, 50, 0', maxNumberOfBuilds: 50, methodCoverageTargets: '75, 50, 0', onlyStable: false, zoomCoverageChart: false
     }
 
