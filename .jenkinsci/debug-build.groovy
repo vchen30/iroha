@@ -77,7 +77,7 @@ def doDebugBuild(coverageEnabled=false) {
       }
 
       sh "lcov --capture --directory build --config-file .lcovrc --output-file build/reports/coverage_full.info"
-      sh "lcov -a build/reports/coverage_init.info -a build/reports/coverage_full.info --output-file build/reports/coverage_full.info"
+      sh "lcov -a build/reports/coverage_init.info -a build/reports/coverage_full.info --config-file .lcovrc --output-file build/reports/coverage_full.info"
       sh "lcov --remove build/reports/coverage_full.info '/usr/*' 'schema/*' --config-file .lcovrc -o build/reports/coverage_full.info"
       sh "python /tmp/lcov_cobertura.py build/reports/coverage_full.info -o build/reports/coverage.xml"                
       cobertura autoUpdateHealth: false, autoUpdateStability: false, coberturaReportFile: '**/build/reports/coverage.xml', conditionalCoverageTargets: '75, 50, 0', failUnhealthy: false, failUnstable: false, lineCoverageTargets: '75, 50, 0', maxNumberOfBuilds: 50, methodCoverageTargets: '75, 50, 0', onlyStable: false, zoomCoverageChart: false
