@@ -81,9 +81,11 @@ pipeline {
           post {
             always {
               script {
-                def cleanup = load ".jenkinsci/docker-cleanup.groovy"
-                cleanup.doDockerCleanup()
-                cleanWs()
+                timeout(time: 60, unit: SECONDS) {
+                  def cleanup = load ".jenkinsci/docker-cleanup.groovy"
+                  cleanup.doDockerCleanup()
+                  cleanWs()
+                }
               }
             }
           }
@@ -109,9 +111,11 @@ pipeline {
           post {
             always {
               script {
-                def cleanup = load ".jenkinsci/docker-cleanup.groovy"
-                cleanup.doDockerCleanup()
-                cleanWs()
+                timeout(time: 60, unit: SECONDS) {
+                  def cleanup = load ".jenkinsci/docker-cleanup.groovy"
+                  cleanup.doDockerCleanup()
+                  cleanWs()
+                }
               }
             }
           }
@@ -137,9 +141,11 @@ pipeline {
           post {
             always {
               script {
-                def cleanup = load ".jenkinsci/docker-cleanup.groovy"
-                cleanup.doDockerCleanup()
-                cleanWs()
+                timeout(time: 60, unit: SECONDS) {
+                  def cleanup = load ".jenkinsci/docker-cleanup.groovy"
+                  cleanup.doDockerCleanup()
+                  cleanWs()
+                }
               }
             }
           }
@@ -159,13 +165,13 @@ pipeline {
               env.IROHA_BUILD = "${env.IROHA_HOME}/build"
 
               sh """
-                /usr/local/bin/ccache --version
-                /usr/local/bin/ccache --show-stats
-                /usr/local/bin/ccache --zero-stats
-                /usr/local/bin/ccache --max-size=5G
+                ccache --version
+                ccache --show-stats
+                ccache --zero-stats
+                ccache --max-size=5G
               """
               sh """
-                /usr/local/bin/cmake \
+                cmake \
                   -DCOVERAGE=ON \
                   -DTESTING=ON \
                   -H. \
@@ -173,25 +179,25 @@ pipeline {
                   -DCMAKE_BUILD_TYPE=${params.BUILD_TYPE} \
                   -DIROHA_VERSION=${env.IROHA_VERSION}
               """
-              sh "/usr/local/bin/cmake --build build -- -j${params.PARALLELISM}"
-              sh "/usr/local/bin/ccache --show-stats"
-              sh "/usr/local/bin/lcov --capture --initial --directory build --config-file .lcovrc --output-file build/reports/coverage_init.info"
+              sh "cmake --build build -- -j${params.PARALLELISM}"
+              sh "ccache --show-stats"
+              sh "lcov --capture --initial --directory build --config-file .lcovrc --output-file build/reports/coverage_init.info"
               sh """
                 export IROHA_POSTGRES_PASSWORD=${IROHA_POSTGRES_PASSWORD}; \
                 export IROHA_POSTGRES_USER=${IROHA_POSTGRES_USER}; \
                 mkdir -p /var/jenkins/${GIT_COMMIT}-${BUILD_NUMBER}; \
-                /usr/local/bin/initdb -D /var/jenkins/${GIT_COMMIT}-${BUILD_NUMBER}/ -U ${IROHA_POSTGRES_USER} --pwfile=<(echo ${IROHA_POSTGRES_PASSWORD}); \
-                /usr/local/bin/pg_ctl -D /var/jenkins/${GIT_COMMIT}-${BUILD_NUMBER}/ -o '-p 5433' -l /var/jenkins/${GIT_COMMIT}-${BUILD_NUMBER}/events.log start; \
-                /usr/local/bin/psql -h localhost -d postgres -p 5433 -U ${IROHA_POSTGRES_USER} --file=<(echo create database ${IROHA_POSTGRES_USER};)
+                initdb -D /var/jenkins/${GIT_COMMIT}-${BUILD_NUMBER}/ -U ${IROHA_POSTGRES_USER} --pwfile=<(echo ${IROHA_POSTGRES_PASSWORD}); \
+                pg_ctl -D /var/jenkins/${GIT_COMMIT}-${BUILD_NUMBER}/ -o '-p 5433' -l /var/jenkins/${GIT_COMMIT}-${BUILD_NUMBER}/events.log start; \
+                psql -h localhost -d postgres -p 5433 -U ${IROHA_POSTGRES_USER} --file=<(echo create database ${IROHA_POSTGRES_USER};)
               """
-              sh "IROHA_POSTGRES_HOST=localhost IROHA_POSTGRES_PORT=5433 /usr/local/bin/cmake --build build --target test"
-              sh "/usr/local/bin/cmake --build build --target cppcheck"
+              sh "IROHA_POSTGRES_HOST=localhost IROHA_POSTGRES_PORT=5433 cmake --build build --target test"
+              sh "cmake --build build --target cppcheck"
 
               if ( coverageEnabled ) {
                 // Sonar
                 if (env.CHANGE_ID != null) {
                   sh """
-                    /usr/local/bin/sonar-scanner \
+                    sonar-scanner \
                       -Dsonar.github.disableInlineComments \
                       -Dsonar.github.repository='hyperledger/iroha' \
                       -Dsonar.analysis.mode=preview \
@@ -200,9 +206,9 @@ pipeline {
                       -Dsonar.github.oauth=${SORABOT_TOKEN}
                   """
                 }
-                sh "/usr/local/bin/lcov --capture --directory build --config-file .lcovrc --output-file build/reports/coverage_full.info"
-                sh "/usr/local/bin/lcov -a build/reports/coverage_init.info -a build/reports/coverage_full.info --config-file .lcovrc --output-file build/reports/coverage_full.info"
-                sh "/usr/local/bin/lcov --remove build/reports/coverage_full.info '/usr/*' 'schema/*' --config-file .lcovrc -o build/reports/coverage_full.info"
+                sh "lcov --capture --directory build --config-file .lcovrc --output-file build/reports/coverage_full.info"
+                sh "lcov -a build/reports/coverage_init.info -a build/reports/coverage_full.info --config-file .lcovrc --output-file build/reports/coverage_full.info"
+                sh "lcov --remove build/reports/coverage_full.info '/usr/*' 'schema/*' --config-file .lcovrc -o build/reports/coverage_full.info"
                 sh "python /usr/local/bin/lcov_cobertura.py build/reports/coverage_full.info -o build/reports/coverage.xml"
                 cobertura autoUpdateHealth: false, autoUpdateStability: false, coberturaReportFile: '**/build/reports/coverage.xml', conditionalCoverageTargets: '75, 50, 0', failUnhealthy: false, failUnstable: false, lineCoverageTargets: '75, 50, 0', maxNumberOfBuilds: 50, methodCoverageTargets: '75, 50, 0', onlyStable: false, zoomCoverageChart: false
               }
@@ -217,11 +223,13 @@ pipeline {
           post {
             always {
               script {
-                cleanWs()
-                sh """
-                  /usr/local/bin/pg_ctl -D /var/jenkins/${GIT_COMMIT}-${BUILD_NUMBER}/ stop && \
-                  rm -rf /var/jenkins/${GIT_COMMIT}-${BUILD_NUMBER}/
-                """
+                timeout(time: 60, unit: SECONDS) {
+                  cleanWs()
+                  sh """
+                    pg_ctl -D /var/jenkins/${GIT_COMMIT}-${BUILD_NUMBER}/ stop && \
+                    rm -rf /var/jenkins/${GIT_COMMIT}-${BUILD_NUMBER}/
+                  """
+                }
               }
             }
           }
@@ -301,23 +309,23 @@ pipeline {
               env.IROHA_VERSION = "0x${scmVars.GIT_COMMIT}"
               env.IROHA_HOME = "/opt/iroha"
               env.IROHA_BUILD = "${env.IROHA_HOME}/build"
-              env.CCACHE_DIR = "${env.IROHA_HOME}/.ccache"
 
               sh """
-                /usr/local/bin/ccache --version
-                /usr/local/bin/ccache --show-stats
-                /usr/local/bin/ccache --zero-stats
-                /usr/local/bin/ccache --max-size=5G
+                ccache --version
+                ccache --show-stats
+                ccache --zero-stats
+                ccache --max-size=5G
+                ccache --set-config=cache_dir=~/.ccache
               """  
               sh """
-                /usr/local/bin/cmake \
+                cmake \
                   -H. \
                   -Bbuild \
                   -DCMAKE_BUILD_TYPE=${params.BUILD_TYPE} \
                   -DIROHA_VERSION=${env.IROHA_VERSION}
               """
-              sh "/usr/local/bin/cmake --build build -- -j${params.PARALLELISM}"
-              sh "/usr/local/bin/ccache --show-stats"
+              sh "cmake --build build -- -j${params.PARALLELISM}"
+              sh "ccache --show-stats"
               
               // TODO: replace with upload to artifactory server
               // only develop branch
