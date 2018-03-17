@@ -81,7 +81,7 @@ pipeline {
           post {
             always {
               script {
-                timeout(time: 60, unit: SECONDS) {
+                timeout(time: 60, unit: "SECONDS") {
                   def cleanup = load ".jenkinsci/docker-cleanup.groovy"
                   cleanup.doDockerCleanup()
                   cleanWs()
@@ -111,7 +111,7 @@ pipeline {
           post {
             always {
               script {
-                timeout(time: 60, unit: SECONDS) {
+                timeout(time: 60, unit: "SECONDS") {
                   def cleanup = load ".jenkinsci/docker-cleanup.groovy"
                   cleanup.doDockerCleanup()
                   cleanWs()
@@ -141,7 +141,7 @@ pipeline {
           post {
             always {
               script {
-                timeout(time: 60, unit: SECONDS) {
+                timeout(time: 60, unit: "SECONDS") {
                   def cleanup = load ".jenkinsci/docker-cleanup.groovy"
                   cleanup.doDockerCleanup()
                   cleanWs()
@@ -223,7 +223,7 @@ pipeline {
           post {
             always {
               script {
-                timeout(time: 60, unit: SECONDS) {
+                timeout(time: 60, unit: "SECONDS") {
                   cleanWs()
                   sh """
                     pg_ctl -D /var/jenkins/${GIT_COMMIT}-${BUILD_NUMBER}/ stop && \
@@ -256,9 +256,11 @@ pipeline {
           post {
             always {
               script {
-                def cleanup = load ".jenkinsci/docker-cleanup.groovy"
-                cleanup.doDockerCleanup()
-                cleanWs()
+                timeout(time: 60, unit: "SECONDS") {
+                  def cleanup = load ".jenkinsci/docker-cleanup.groovy"
+                  cleanup.doDockerCleanup()
+                  cleanWs()
+                }
               }
             }
           }
@@ -275,9 +277,11 @@ pipeline {
           post {
             always {
               script {
-                def cleanup = load ".jenkinsci/docker-cleanup.groovy"
-                cleanup.doDockerCleanup()
-                cleanWs()
+                timeout(time: 60, unit: "SECONDS") {
+                  def cleanup = load ".jenkinsci/docker-cleanup.groovy"
+                  cleanup.doDockerCleanup()
+                  cleanWs()
+                }
               }
             }
           }            
@@ -294,9 +298,11 @@ pipeline {
           post {
             always {
               script {
-                def cleanup = load ".jenkinsci/docker-cleanup.groovy"
-                cleanup.doDockerCleanup()
-                cleanWs()
+                timeout(time: 60, unit: "SECONDS") {
+                  def cleanup = load ".jenkinsci/docker-cleanup.groovy"
+                  cleanup.doDockerCleanup()
+                  cleanWs()
+                }
               }
             }
           }            
@@ -315,7 +321,6 @@ pipeline {
                 ccache --show-stats
                 ccache --zero-stats
                 ccache --max-size=5G
-                ccache --set-config=cache_dir=~/.ccache
               """  
               sh """
                 cmake \

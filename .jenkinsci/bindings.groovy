@@ -10,7 +10,7 @@ def doBindings() {
     cmake_options += " -DSWIG_PYTHON=ON "
   }
   // In case language specific options were not set,
-  // build for every language
+  // build for each language
   if (!params.JavaBindings && !params.PythonBindings) {
     cmake_options += " -DSWIG_JAVA=ON -DSWIG_PYTHON=ON "
   }
@@ -21,6 +21,7 @@ def doBindings() {
       -DCMAKE_BUILD_TYPE=Release \
       ${cmake_options}
   """
+  sh "cmake --build build --target python_tests"
   sh "cd build; make -j${params.PARALLELISM} irohajava irohapy"
   archive(includes: 'build/shared_model/bindings/')
 }
