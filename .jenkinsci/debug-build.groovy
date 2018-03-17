@@ -5,7 +5,6 @@ def doDebugBuild(coverageEnabled=false) {
   if ("arm7" in env.NODE_NAME) {
     parallelism = 1
   }
-  sh "echo local parallelism is ${env.parallelism}"
   sh "docker network create ${env.IROHA_NETWORK}"
 
   docker.image('postgres:9.5').run(""
@@ -20,13 +19,13 @@ def doDebugBuild(coverageEnabled=false) {
   // speeds up consequent image builds as we simply tag them 
   sh "docker pull ${DOCKER_BASE_IMAGE_DEVELOP}"
   if (env.BRANCH_NAME == 'develop') {
-    iC = docker.build("hyperledger/iroha:${GIT_COMMIT}-${BUILD_NUMBER}", "--build-arg PARALLELISM=${parallelism} -f /tmp/${env.GIT_COMMIT}/Dockerfile /tmp/${env.GIT_COMMIT}")
+    iC = docker.build("hyperledger/iroha:${GIT_COMMIT}-${BUILD_NUMBER}", "--build-arg PARALLELISM=${env.parallelism} -f /tmp/${env.GIT_COMMIT}/Dockerfile /tmp/${env.GIT_COMMIT}")
     docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
       iC.push("${platform}-develop")
     }
   }
   else {
-    iC = docker.build("hyperledger/iroha-workflow:${GIT_COMMIT}-${BUILD_NUMBER}", "-f /tmp/${env.GIT_COMMIT}/Dockerfile /tmp/${env.GIT_COMMIT} --build-arg PARALLELISM=${parallelism}")
+    iC = docker.build("hyperledger/iroha-workflow:${GIT_COMMIT}-${BUILD_NUMBER}", "-f /tmp/${env.GIT_COMMIT}/Dockerfile /tmp/${env.GIT_COMMIT} --build-arg PARALLELISM=${env.parallelism}")
   }
   iC.inside(""
     + " -e IROHA_POSTGRES_HOST=${env.IROHA_POSTGRES_HOST}"
@@ -56,11 +55,14 @@ def doDebugBuild(coverageEnabled=false) {
         -DCMAKE_BUILD_TYPE=Debug \
         -DIROHA_VERSION=${env.IROHA_VERSION}
     """
-    sh "cmake --build build -- -j${parallelism}"
+    sh "cmake --build build -- -j${env.parallelism}"
     sh "ccache --show-stats"
-    sh "cmake --build build --target test"
+    def testExitCode = sh(script: 'cmake --build build --target test', returnStatus: true)
+    if (testExitCode != 0) {
+      currentBuild.result = "UNSTABLE"
+    }
     sh "cmake --build build --target cppcheck"
-
+    
     if ( coverageEnabled ) {
       // Sonar
       if (env.CHANGE_ID != null) {
