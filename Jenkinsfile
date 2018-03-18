@@ -384,12 +384,6 @@ pipeline {
           iC.inside {
             def scmVars = checkout scm
             bindings.doBindings()
-          }
-        }
-      }
-      post {
-        success {
-          script {
             // Archive artifacts with a customized name
             if( params.JavaBindings || (!params.JavaBindings && !params.PythonBindings) ) {
               sh "zip java-${GIT_COMMIT}.zip build/shared_model/bindings/*.java build/shared_model/bindings/libirohajava.so"
