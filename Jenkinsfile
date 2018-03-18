@@ -393,6 +393,7 @@ pipeline {
               sh "zip -j python-${GIT_COMMIT}.zip build/shared_model/bindings/*.py build/shared_model/bindings/_iroha.so"
               archive(includes: "python-${GIT_COMMIT}.zip")
             }
+            // TODO: publish to artifacts server
           }
         }
       }
