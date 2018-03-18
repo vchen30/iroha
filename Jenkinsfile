@@ -371,6 +371,9 @@ pipeline {
         }
       }
       agent { label 'x86_64' }
+      environment {
+        JAVA_HOME = '/usr/lib/jvm/java-8-oracle'
+      }
       steps {
         script {
           def bindings = load ".jenkinsci/bindings.groovy"
