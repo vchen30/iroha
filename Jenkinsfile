@@ -391,11 +391,11 @@ pipeline {
         success {
           script {
             // Archive artifacts with a customized name
-            if( params.JavaBindings ) {
+            if( params.JavaBindings || (!params.JavaBindings && !params.PythonBindings) ) {
               sh "zip java-${GIT_COMMIT}.zip build/shared_model/bindings/*.java build/shared_model/bindings/libirohajava.so"
               archive(includes: "java-${GIT_COMMIT}.zip")
             }
-            if( params.PythonBindings ) {
+            if( params.PythonBindings || (!params.JavaBindings && !params.PythonBindings) ) {
               sh "zip python-${GIT_COMMIT}.zip build/shared_model/bindings/*.py,build/shared_model/bindings/_iroha.so"
               archive(includes: "python-${GIT_COMMIT}.zip")
             }

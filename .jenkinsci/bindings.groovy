@@ -11,8 +11,6 @@ def doBindings() {
   // In case language specific options were not set,
   // build for each language
   if (!params.JavaBindings && !params.PythonBindings) {
-    //params.JavaBindings = true
-    //params.PythonBindings = true
     cmake_options += " -DSWIG_JAVA=ON -DSWIG_PYTHON=ON "
   }
   sh """
