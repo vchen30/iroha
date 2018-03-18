@@ -278,7 +278,7 @@ RUN git clone https://gitlab.kitware.com/cmake/cmake.git /tmp/cmake; \
 RUN curl -L -o /tmp/lcov-1.13.tar.gz https://github.com/linux-test-project/lcov/releases/download/v1.13/lcov-1.13.tar.gz; cd /tmp; tar zxf lcov-1.13.tar.gz; cd lcov-1.13; make install
 
 # install zip
-RUN apt install -y zip
+RUN apt-get -y install zip
 
 # non-interactive adduser
 #   -m = create home dir
