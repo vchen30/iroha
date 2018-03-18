@@ -387,6 +387,19 @@ pipeline {
           }
         }
       }
+      post {
+        success {
+          // Archive artifacts with a customized name
+          if( params.JavaBindings ) {
+            sh "zip java-${GIT_COMMIT}.zip build/shared_model/bindings/*.java build/shared_model/bindings/libirohajava.so"
+            archive(includes: "java-${GIT_COMMIT}.zip")
+          }
+          if( params.PythonBindings ) {
+            sh "zip python-${GIT_COMMIT}.zip build/shared_model/bindings/*.py,build/shared_model/bindings/_iroha.so"
+            archive(includes: "python-${GIT_COMMIT}.zip")
+          }
+        }
+      }
     }
   }
 }

@@ -11,6 +11,8 @@ def doBindings() {
   // In case language specific options were not set,
   // build for each language
   if (!params.JavaBindings && !params.PythonBindings) {
+    params.JavaBindings = true
+    params.PythonBindings = true
     cmake_options += " -DSWIG_JAVA=ON -DSWIG_PYTHON=ON "
   }
   sh """
@@ -22,7 +24,6 @@ def doBindings() {
   """
   sh "cmake --build build --target python_tests"
   sh "cd build; make -j${params.PARALLELISM} irohajava irohapy"
-  archive(includes: 'build/shared_model/bindings/')
 }
 
 return this
