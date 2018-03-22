@@ -22,6 +22,7 @@
 #include "backend/protobuf/from_old_model.hpp"
 #include "interfaces/common_objects/peer.hpp"
 #include "network/impl/block_loader_impl.hpp"
+#include "interfaces/iroha_internal/block.hpp"
 
 using namespace iroha::ametsuchi;
 using namespace iroha::network;
@@ -51,13 +52,12 @@ rxcpp::observable<std::shared_ptr<Block>> BlockLoaderImpl::retrieveBlocks(
     const PublicKey &peer_pubkey) {
   return rxcpp::observable<>::create<std::shared_ptr<Block>>(
       [this, peer_pubkey](auto subscriber) {
-        boost::optional<iroha::model::Block> top_block;
+        boost::optional<std::shared_ptr<Block>> top_block;
         block_query_->getTopBlocks(1)
             .subscribe_on(rxcpp::observe_on_new_thread())
             .as_blocking()
             .subscribe([&top_block](auto block) {
-              top_block =
-                  *std::unique_ptr<iroha::model::Block>(block->makeOldModel());
+              top_block = block;
             });
         if (not top_block) {
           log_->error(kTopBlockRetrieveFail);
@@ -77,10 +77,10 @@ rxcpp::observable<std::shared_ptr<Block>> BlockLoaderImpl::retrieveBlocks(
         protocol::Block block;
 
         // request next block to our top
-        request.set_height(top_block->height + 1);
+        request.set_height((*top_block)->height() + 1);
 
         auto reader =
-            this->getPeerStub(peer.value()).retrieveBlocks(&context, request);
+            this->getPeerStub(**peer).retrieveBlocks(&context, request);
         while (reader->Read(&block)) {
           auto result =
               std::make_shared<shared_model::proto::Block>(std::move(block));
@@ -123,7 +123,7 @@ boost::optional<std::shared_ptr<Block>> BlockLoaderImpl::retrieveBlock(
   request.set_hash(toBinaryString(block_hash));
 
   auto status =
-      getPeerStub(peer.value()).retrieveBlock(&context, request, &block);
+      getPeerStub(**peer).retrieveBlock(&context, request, &block);
   if (not status.ok()) {
     log_->warn(status.error_message());
     return boost::none;
@@ -146,8 +146,8 @@ boost::optional<std::shared_ptr<Block>> BlockLoaderImpl::retrieveBlock(
   return boost::optional<std::shared_ptr<Block>>(std::move(result));
 }
 
-boost::optional<iroha::model::Peer> BlockLoaderImpl::findPeer(
-    const shared_model::crypto::PublicKey &pubkey) {
+boost::optional<std::shared_ptr<shared_model::interface::Peer>>
+BlockLoaderImpl::findPeer(const shared_model::crypto::PublicKey &pubkey) {
   auto peers = peer_query_->getLedgerPeers();
   if (not peers) {
     log_->error(kPeerRetrieveFail);
@@ -163,19 +163,18 @@ boost::optional<iroha::model::Peer> BlockLoaderImpl::findPeer(
     log_->error(kPeerFindFail);
     return boost::none;
   }
-
-  return *std::unique_ptr<iroha::model::Peer>((*it)->makeOldModel());
+  return *it;
 }
 
 proto::Loader::Stub &BlockLoaderImpl::getPeerStub(
-    const iroha::model::Peer &peer) {
-  auto it = peer_connections_.find(peer);
+    const shared_model::interface::Peer &peer) {
+  auto it = peer_connections_.find(peer.address());
   if (it == peer_connections_.end()) {
     it = peer_connections_
              .insert(std::make_pair(
-                 peer,
+                 peer.address(),
                  proto::Loader::NewStub(grpc::CreateChannel(
-                     peer.address, grpc::InsecureChannelCredentials()))))
+                     peer.address(), grpc::InsecureChannelCredentials()))))
              .first;
   }
   return *it->second;
