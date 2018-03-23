@@ -19,10 +19,9 @@
 #include <algorithm>
 
 #include "backend/protobuf/block.hpp"
-#include "backend/protobuf/from_old_model.hpp"
 #include "interfaces/common_objects/peer.hpp"
-#include "network/impl/block_loader_impl.hpp"
 #include "interfaces/iroha_internal/block.hpp"
+#include "network/impl/block_loader_impl.hpp"
 
 using namespace iroha::ametsuchi;
 using namespace iroha::network;
@@ -56,9 +55,7 @@ rxcpp::observable<std::shared_ptr<Block>> BlockLoaderImpl::retrieveBlocks(
         block_query_->getTopBlocks(1)
             .subscribe_on(rxcpp::observe_on_new_thread())
             .as_blocking()
-            .subscribe([&top_block](auto block) {
-              top_block = block;
-            });
+            .subscribe([&top_block](auto block) { top_block = block; });
         if (not top_block) {
           log_->error(kTopBlockRetrieveFail);
           subscriber.on_completed();
@@ -122,8 +119,7 @@ boost::optional<std::shared_ptr<Block>> BlockLoaderImpl::retrieveBlock(
   // request block with specified hash
   request.set_hash(toBinaryString(block_hash));
 
-  auto status =
-      getPeerStub(**peer).retrieveBlock(&context, request, &block);
+  auto status = getPeerStub(**peer).retrieveBlock(&context, request, &block);
   if (not status.ok()) {
     log_->warn(status.error_message());
     return boost::none;
