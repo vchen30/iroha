@@ -224,7 +224,7 @@ pipeline {
               script {
                 sh "echo put build/bin/* /files > batch.txt"
                 sshagent(['jenkins-artifact']) {
-                  sh "sshagent"
+                  sh "ssh-agent"
                   sh "sftp -b batch.txt jenkins@54.76.154.71"
                 }
               }
