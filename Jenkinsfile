@@ -194,10 +194,10 @@ pipeline {
                 pg_ctl -D /var/jenkins/${GIT_COMMIT}-${BUILD_NUMBER}/ -o '-p 5433' -l /var/jenkins/${GIT_COMMIT}-${BUILD_NUMBER}/events.log start; \
                 psql -h localhost -d postgres -p 5433 -U ${IROHA_POSTGRES_USER} --file=<(echo create database ${IROHA_POSTGRES_USER};)
               """
-              def testExitCode = sh(script: 'IROHA_POSTGRES_HOST=localhost IROHA_POSTGRES_PORT=5433 cmake --build build --target test', returnStatus: true)
-              if (testExitCode != 0) {
-                currentBuild.result = "UNSTABLE"
-              }
+              //def testExitCode = sh(script: 'IROHA_POSTGRES_HOST=localhost IROHA_POSTGRES_PORT=5433 cmake --build build --target test', returnStatus: true)
+              //if (testExitCode != 0) {
+              //  currentBuild.result = "UNSTABLE"
+              //}
               if ( coverageEnabled ) {
                 sh "cmake --build build --target cppcheck"
                 // Sonar
@@ -217,15 +217,18 @@ pipeline {
                 cobertura autoUpdateHealth: false, autoUpdateStability: false, coberturaReportFile: '**/build/reports/coverage.xml', conditionalCoverageTargets: '75, 50, 0', failUnhealthy: false, failUnstable: false, lineCoverageTargets: '75, 50, 0', maxNumberOfBuilds: 50, methodCoverageTargets: '75, 50, 0', onlyStable: false, zoomCoverageChart: false
 
               }
-              
-              // TODO: replace with upload to artifactory server
-              // only develop branch
-              if ( env.BRANCH_NAME == "develop" ) {
-                //archive(includes: 'build/bin/,compile_commands.json')
-              }
             }
           }
           post {
+            success {
+              script {
+                sh "echo put build/bin/* /files > batch.txt"
+                sshagent(['jenkins-artifact']) {
+                  sh "sshagent"
+                  sh "sftp -b batch.txt jenkins@54.76.154.71"
+                }
+              }
+            }
             always {
               script {
                 timeout(time: 60, unit: "SECONDS") {
