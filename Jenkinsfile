@@ -222,7 +222,7 @@ pipeline {
           post {
             success {
               script {
-                sh "echo put build/bin/* /files > batch.txt"
+                sh "for i in `ls -d build/bin/*`; do echo put $i /files >> batch.txt;done"
                 sshagent(['jenkins-artifact']) {
                   sh "ssh-agent"
                   sh "sftp -b batch.txt jenkins@54.76.154.71"
