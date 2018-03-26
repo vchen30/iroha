@@ -31,6 +31,13 @@
 #include "ametsuchi/block_query.hpp"
 #include "ametsuchi/wsv_query.hpp"
 
+namespace shared_model {
+  namespace interface {
+    class QueryResponse;
+    class Query;
+  }  // namespace interface
+}  // namespace shared_model
+
 namespace iroha {
   namespace model {
 
@@ -45,8 +52,8 @@ namespace iroha {
        * @param query
        * @return
        */
-      std::shared_ptr<iroha::model::QueryResponse> execute(
-          std::shared_ptr<const model::Query> query);
+      std::shared_ptr<shared_model::interface::QueryResponse> execute(
+          const shared_model::interface::Query &query);
       /**
        *
        * @param wsvQuery
@@ -56,56 +63,91 @@ namespace iroha {
                              std::shared_ptr<ametsuchi::BlockQuery> blockQuery);
 
      private:
-      bool validate(const model::GetAssetInfo &query);
+      bool validate(
+          const shared_model::interface::Query &query,
+          const shared_model::interface::GetAssetInfo &get_asset_info);
 
-      bool validate(const model::GetRoles &query);
+      bool validate(const shared_model::interface::Query &query,
+                    const shared_model::interface::GetRoles &get_roles);
 
-      bool validate(const model::GetRolePermissions &query);
+      bool validate(const shared_model::interface::Query &query,
+                    const shared_model::interface::GetRolePermissions
+                        &get_role_permissions);
 
-      bool validate(const model::GetAccountAssets &query);
+      bool validate(
+          const shared_model::interface::Query &query,
+          const shared_model::interface::GetAccountAssets &get_account_assets);
 
-      bool validate(const model::GetAccount &query);
+      bool validate(const shared_model::interface::Query &query,
+                    const shared_model::interface::GetAccount &get_account);
 
-      bool validate(const model::GetSignatories &query);
+      bool validate(
+          const shared_model::interface::Query &query,
+          const shared_model::interface::GetSignatories &get_signatories);
 
-      bool validate(const model::GetAccountTransactions &query);
+      bool validate(const shared_model::interface::Query &query,
+                    const shared_model::interface::GetAccountTransactions
+                        &get_account_transactions);
 
-      bool validate(const model::GetAccountAssetTransactions &query);
+      bool validate(const shared_model::interface::Query &query,
+                    const shared_model::interface::GetAccountAssetTransactions
+                        &get_account_asset_transactions);
 
-      bool validate(const model::GetAccountDetail &query);
+      bool validate(
+          const shared_model::interface::Query &query,
+          const shared_model::interface::GetAccountDetail &get_account_detail);
 
-      bool validate(const model::GetTransactions &query);
+      bool validate(
+          const shared_model::interface::Query &query,
+          const shared_model::interface::GetTransactions &get_transactions);
 
-      std::shared_ptr<iroha::model::QueryResponse> executeGetAssetInfo(
-          const model::GetAssetInfo &query);
+      std::shared_ptr<shared_model::interface::QueryResponse>
+      executeGetAssetInfo(
+          const shared_model::interface::GetAssetInfo &get_asset_info,
+          const shared_model::interface::types::HashType &hash);
 
-      std::shared_ptr<iroha::model::QueryResponse> executeGetRoles(
-          const model::GetRoles &query);
+      std::shared_ptr<shared_model::interface::QueryResponse> executeGetRoles(
+          const shared_model::interface::GetRoles &query,
+          const shared_model::interface::types::HashType &hash);
 
-      std::shared_ptr<iroha::model::QueryResponse> executeGetRolePermissions(
-          const model::GetRolePermissions &query);
+      std::shared_ptr<shared_model::interface::QueryResponse>
+      executeGetRolePermissions(
+          const shared_model::interface::GetRolePermissions &query,
+          const shared_model::interface::types::HashType &hash);
 
-      std::shared_ptr<iroha::model::QueryResponse> executeGetAccountAssets(
-          const model::GetAccountAssets &query);
+      std::shared_ptr<shared_model::interface::QueryResponse>
+      executeGetAccountAssets(
+          const shared_model::interface::GetAccountAssets &query,
+          const shared_model::interface::types::HashType &hash);
 
-      std::shared_ptr<iroha::model::QueryResponse> executeGetAccountDetail(
-          const model::GetAccountDetail &query);
+      std::shared_ptr<shared_model::interface::QueryResponse>
+      executeGetAccountDetail(
+          const shared_model::interface::GetAccountDetail &query,
+          const shared_model::interface::types::HashType &hash);
 
-      std::shared_ptr<iroha::model::QueryResponse> executeGetAccount(
-          const model::GetAccount &query);
+      std::shared_ptr<shared_model::interface::QueryResponse> executeGetAccount(
+          const shared_model::interface::GetAccount &query,
+          const shared_model::interface::types::HashType &hash);
 
-      std::shared_ptr<iroha::model::QueryResponse> executeGetSignatories(
-          const model::GetSignatories &query);
+      std::shared_ptr<shared_model::interface::QueryResponse>
+      executeGetSignatories(
+          const shared_model::interface::GetSignatories &query,
+          const shared_model::interface::types::HashType &hash);
 
-      std::shared_ptr<iroha::model::QueryResponse>
+      std::shared_ptr<shared_model::interface::QueryResponse>
       executeGetAccountAssetTransactions(
-          const model::GetAccountAssetTransactions &query);
+          const shared_model::interface::GetAccountAssetTransactions &query,
+          const shared_model::interface::types::HashType &hash);
 
-      std::shared_ptr<iroha::model::QueryResponse>
-      executeGetAccountTransactions(const model::GetAccountTransactions &query);
+      std::shared_ptr<shared_model::interface::QueryResponse>
+      executeGetAccountTransactions(
+          const shared_model::interface::GetAccountTransactions &query,
+          const shared_model::interface::types::HashType &hash);
 
-      std::shared_ptr<iroha::model::QueryResponse> executeGetTransactions(
-          const model::GetTransactions &query);
+      std::shared_ptr<shared_model::interface::QueryResponse>
+      executeGetTransactions(
+          const shared_model::interface::GetTransactions &query,
+          const shared_model::interface::types::HashType &hash);
 
       std::shared_ptr<ametsuchi::WsvQuery> _wsvQuery;
       std::shared_ptr<ametsuchi::BlockQuery> _blockQuery;

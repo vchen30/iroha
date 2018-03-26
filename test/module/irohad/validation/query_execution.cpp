@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+#include <builders/protobuf/queries.hpp>
 #include "module/irohad/ametsuchi/ametsuchi_mocks.hpp"
 #include "module/shared_model/builders/protobuf/test_transaction_builder.hpp"
 
@@ -81,7 +82,8 @@ class QueryValidateExecuteTest : public ::testing::Test {
                         .build());
   }
 
-  std::shared_ptr<QueryResponse> validateAndExecute() {
+  std::shared_ptr<shared_model::interface::QueryResponse> validateAndExecute(
+      const shared_model::interface::Query &query) {
     return factory->execute(query);
   }
 
@@ -127,21 +129,15 @@ class QueryValidateExecuteTest : public ::testing::Test {
   std::shared_ptr<MockBlockQuery> block_query;
 
   std::shared_ptr<QueryProcessingFactory> factory;
-  std::shared_ptr<Query> query;
 };
 
 class GetAccountTest : public QueryValidateExecuteTest {
  public:
   void SetUp() override {
     QueryValidateExecuteTest::SetUp();
-    get_account = std::make_shared<GetAccount>();
-    get_account->account_id = admin_id;
-    get_account->creator_account_id = admin_id;
-    query = get_account;
 
     role_permissions = {can_get_my_account};
   }
-  std::shared_ptr<GetAccount> get_account;
 };
 
 /**
@@ -153,13 +149,25 @@ TEST_F(GetAccountTest, MyAccountValidCase) {
   // getAccount calls getAccountRoles and combines it into AccountResponse
   // In case when user is requesting her account the getAccountRoles will be
   // called twice: 1. To check permissions; 2. To create AccountResponse
+
+  auto query =
+      shared_model::proto::QueryBuilder()
+          .creatorAccountId(admin_id)
+          .getAccount(admin_id)
+          .queryCounter(1)
+          .createdTime(iroha::time::now())
+          .build()
+          .signAndAddSignature(
+              shared_model::crypto::DefaultCryptoAlgorithmType::
+              generateKeypair());
+
   EXPECT_CALL(*wsv_query, getAccountRoles(admin_id))
       .Times(2)
       .WillRepeatedly(Return(admin_roles));
   EXPECT_CALL(*wsv_query, getRolePermissions(admin_role))
       .WillOnce(Return(role_permissions));
   EXPECT_CALL(*wsv_query, getAccount(admin_id)).WillOnce(Return(creator));
-  auto response = validateAndExecute();
+  auto response = validateAndExecute(query);
   auto cast_resp = std::static_pointer_cast<AccountResponse>(response);
   ASSERT_EQ(cast_resp->account.account_id, admin_id);
 }
@@ -289,11 +297,18 @@ class GetAccountAssetsTest : public QueryValidateExecuteTest {
  public:
   void SetUp() override {
     QueryValidateExecuteTest::SetUp();
-    get_account_assets = std::make_shared<GetAccountAssets>();
-    get_account_assets->account_id = admin_id;
-    get_account_assets->asset_id = asset_id;
-    get_account_assets->creator_account_id = admin_id;
-    query = get_account_assets;
+    auto model_query =
+        shared_model::proto::QueryBuilder()
+            .creatorAccountId(admin_id)
+            .getAccountAssets(admin_id, asset_id)
+            .queryCounter(1)
+            .createdTime(iroha::time::now())
+            .build()
+            .signAndAddSignature(
+                shared_model::crypto::DefaultCryptoAlgorithmType::
+                    generateKeypair());
+
+    query = clone(model_query);
 
     std::shared_ptr<shared_model::interface::Amount> amount;
     shared_model::builder::AmountBuilder<
@@ -526,14 +541,21 @@ class GetSignatoriesTest : public QueryValidateExecuteTest {
  public:
   void SetUp() override {
     QueryValidateExecuteTest::SetUp();
-    get_signatories = std::make_shared<GetSignatories>();
-    get_signatories->account_id = admin_id;
-    get_signatories->creator_account_id = admin_id;
-    query = get_signatories;
+    auto model_query =
+        shared_model::proto::QueryBuilder()
+            .creatorAccountId(admin_id)
+            .getSignatories(admin_id)
+            .queryCounter(1)
+            .createdTime(iroha::time::now())
+            .build()
+            .signAndAddSignature(
+                shared_model::crypto::DefaultCryptoAlgorithmType::
+                    generateKeypair());
+
+    query = clone(model_query);
     signs = {shared_model::interface::types::PubkeyType(std::string(32, '0'))};
     role_permissions = {can_get_my_signatories};
   }
-  std::shared_ptr<GetSignatories> get_signatories;
   std::vector<shared_model::interface::types::PubkeyType> signs;
 };
 

@@ -89,16 +89,22 @@ namespace shared_model {
       auto accountAssetResponse(
           const interface::types::AssetIdType &asset_id,
           const interface::types::AccountIdType &account_id,
-          const std::string &amount) const {
+          const interface::Amount &amount) const {
         return queryResponseField([&](auto &proto_query_response) {
           iroha::protocol::AccountAssetResponse *query_response =
               proto_query_response.mutable_account_assets_response();
 
           query_response->mutable_account_asset()->set_account_id(account_id);
           query_response->mutable_account_asset()->set_asset_id(asset_id);
-          initializeProtobufAmount(
-              query_response->mutable_account_asset()->mutable_balance(),
-              amount);
+          auto balance =
+              query_response->mutable_account_asset()->mutable_balance();
+          iroha::Amount tmp(amount.intValue(), amount.precision());
+          auto uint64s = tmp.to_uint64s();
+          balance->mutable_value()->set_first(uint64s.at(0));
+          balance->mutable_value()->set_second(uint64s.at(1));
+          balance->mutable_value()->set_third(uint64s.at(2));
+          balance->mutable_value()->set_fourth(uint64s.at(3));
+          balance->set_precision(tmp.getPrecision());
         });
       }
 
@@ -133,7 +139,7 @@ namespace shared_model {
       }
 
       auto signatoriesResponse(
-          const std::vector<interface::types::BlobType> &signatories) const {
+          const std::vector<interface::types::PubkeyType> &signatories) const {
         return queryResponseField([&](auto &proto_query_response) {
           iroha::protocol::SignatoriesResponse *query_response =
               proto_query_response.mutable_signatories_response();

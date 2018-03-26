@@ -16,6 +16,11 @@
  */
 
 #include "model/query_execution.hpp"
+#include <boost/algorithm/string.hpp>
+#include <rxcpp/rx-observable.hpp>
+#include <utility>
+#include "builders/protobuf/builder_templates/query_response_template.hpp"
+#include "common/visitor.hpp"
 #include "cryptography/ed25519_sha3_impl/internal/sha3_hash.hpp"
 #include "model/execution/common_executor.hpp"
 #include "model/permissions.hpp"
@@ -29,12 +34,14 @@
 #include "model/queries/responses/transactions_response.hpp"
 #include "model/sha3_hash.hpp"
 
-#include <boost/algorithm/string.hpp>
-#include <rxcpp/rx-observable.hpp>
-#include <utility>
-
 using namespace iroha::model;
 using namespace iroha::ametsuchi;
+
+template <class T>
+using w = shared_model::detail::PolymorphicWrapper<T>;
+
+using QueryResponseBuilder =
+    shared_model::proto::TemplateQueryResponseBuilder<>;
 
 QueryProcessingFactory::QueryProcessingFactory(
     std::shared_ptr<ametsuchi::WsvQuery> wsvQuery,
@@ -45,6 +52,14 @@ std::string getDomainFromName(const std::string &account_id) {
   std::vector<std::string> res;
   boost::split(res, account_id, boost::is_any_of("@"));
   return res.size() > 1 ? res.at(1) : "";
+}
+
+template <class T>
+std::shared_ptr<shared_model::interface::QueryResponse> build_error(
+    const shared_model::interface::types::HashType &hash) {
+  auto response =
+      QueryResponseBuilder().queryHash(hash).errorQueryResponse<T>().build();
+  return clone(response);
 }
 
 bool hasQueryPermission(const std::string &creator,
@@ -76,58 +91,72 @@ bool hasQueryPermission(const std::string &creator,
                                          domain_permission_id))));
 }
 
-bool QueryProcessingFactory::validate(const model::GetAssetInfo &query) {
+bool QueryProcessingFactory::validate(
+    const shared_model::interface::Query &query,
+    const shared_model::interface::GetAssetInfo &get_asset_info) {
   // TODO: 03.02.2018 grimadas IR-851: check signatures
   return checkAccountRolePermission(
-      query.creator_account_id, *_wsvQuery, can_read_assets);
+      query.creatorAccountId(), *_wsvQuery, can_read_assets);
 }
 
-bool QueryProcessingFactory::validate(const model::GetRoles &query) {
+bool QueryProcessingFactory::validate(
+    const shared_model::interface::Query &query,
+    const shared_model::interface::GetRoles &get_roles) {
   // TODO: 03.02.2018 grimadas IR-851: check signatures
   return checkAccountRolePermission(
-      query.creator_account_id, *_wsvQuery, can_get_roles);
+      query.creatorAccountId(), *_wsvQuery, can_get_roles);
 }
 
-bool QueryProcessingFactory::validate(const model::GetRolePermissions &query) {
+bool QueryProcessingFactory::validate(
+    const shared_model::interface::Query &query,
+    const shared_model::interface::GetRolePermissions &get_role_permissions) {
   // TODO: 03.02.2018 grimadas IR-851: check signatures
   return checkAccountRolePermission(
-      query.creator_account_id, *_wsvQuery, can_get_roles);
+      query.creatorAccountId(), *_wsvQuery, can_get_roles);
 }
 
-bool QueryProcessingFactory::validate(const model::GetAccount &query) {
+bool QueryProcessingFactory::validate(
+    const shared_model::interface::Query &query,
+    const shared_model::interface::GetAccount &get_account) {
   // TODO: 03.02.2018 grimadas IR-851: check signatures
-  return hasQueryPermission(query.creator_account_id,
-                            query.account_id,
+  return hasQueryPermission(query.creatorAccountId(),
+                            get_account.accountId(),
                             *_wsvQuery,
                             can_get_my_account,
                             can_get_all_accounts,
                             can_get_domain_accounts);
 }
 
-bool QueryProcessingFactory::validate(const model::GetSignatories &query) {
+bool QueryProcessingFactory::validate(
+    const shared_model::interface::Query &query,
+    const shared_model::interface::GetSignatories &get_signatories) {
   // TODO: 03.02.2018 grimadas IR-851: check signatures
-  return hasQueryPermission(query.creator_account_id,
-                            query.account_id,
+  return hasQueryPermission(query.creatorAccountId(),
+                            get_signatories.accountId(),
                             *_wsvQuery,
                             can_get_my_signatories,
                             can_get_all_signatories,
                             can_get_domain_signatories);
 }
 
-bool QueryProcessingFactory::validate(const model::GetAccountAssets &query) {
+bool QueryProcessingFactory::validate(
+    const shared_model::interface::Query &query,
+    const shared_model::interface::GetAccountAssets &get_account_assets) {
   // TODO: 03.02.2018 grimadas IR-851: check signatures
-  return hasQueryPermission(query.creator_account_id,
-                            query.account_id,
+  return hasQueryPermission(query.creatorAccountId(),
+                            get_account_assets.accountId(),
                             *_wsvQuery,
                             can_get_my_acc_ast,
                             can_get_all_acc_ast,
                             can_get_domain_acc_ast);
 }
 
-bool QueryProcessingFactory::validate(const model::GetAccountDetail &query) {
+bool QueryProcessingFactory::validate(
+    const shared_model::interface::Query &query,
+    const shared_model::interface::GetAccountDetail &get_account_detail) {
   // TODO: 03.02.2018 grimadas IR-851: check signatures
-  return hasQueryPermission(query.creator_account_id,
-                            query.account_id,
+  return hasQueryPermission(query.creatorAccountId(),
+                            get_account_detail.accountId(),
                             *_wsvQuery,
                             can_get_my_acc_detail,
                             can_get_all_acc_detail,
@@ -135,10 +164,12 @@ bool QueryProcessingFactory::validate(const model::GetAccountDetail &query) {
 }
 
 bool QueryProcessingFactory::validate(
-    const model::GetAccountTransactions &query) {
+    const shared_model::interface::Query &query,
+    const shared_model::interface::GetAccountTransactions
+        &get_account_transactions) {
   // TODO: 03.02.2018 grimadas IR-851: check signatures
-  return hasQueryPermission(query.creator_account_id,
-                            query.account_id,
+  return hasQueryPermission(query.creatorAccountId(),
+                            get_account_transactions.accountId(),
                             *_wsvQuery,
                             can_get_my_acc_txs,
                             can_get_all_acc_txs,
@@ -146,304 +177,258 @@ bool QueryProcessingFactory::validate(
 }
 
 bool QueryProcessingFactory::validate(
-    const model::GetAccountAssetTransactions &query) {
+    const shared_model::interface::Query &query,
+    const shared_model::interface::GetAccountAssetTransactions
+        &get_account_asset_transactions) {
   // TODO: 03.02.2018 grimadas IR-851: check signatures
-  return hasQueryPermission(query.creator_account_id,
-                            query.account_id,
+  return hasQueryPermission(query.creatorAccountId(),
+                            get_account_asset_transactions.accountId(),
                             *_wsvQuery,
                             can_get_my_acc_ast_txs,
                             can_get_all_acc_ast_txs,
                             can_get_domain_acc_ast_txs);
 }
 
-bool QueryProcessingFactory::validate(const model::GetTransactions &query) {
+bool QueryProcessingFactory::validate(
+    const shared_model::interface::Query &query,
+    const shared_model::interface::GetTransactions &get_transactions) {
   // TODO: 03.02.2018 grimadas IR-851: check signatures
   return checkAccountRolePermission(
-             query.creator_account_id, *_wsvQuery, can_get_my_txs)
+             query.creatorAccountId(), *_wsvQuery, can_get_my_txs)
       or checkAccountRolePermission(
-             query.creator_account_id, *_wsvQuery, can_get_all_txs);
+             query.creatorAccountId(), *_wsvQuery, can_get_all_txs);
 }
 
-std::shared_ptr<QueryResponse> QueryProcessingFactory::executeGetAssetInfo(
-    const model::GetAssetInfo &query) {
-  auto shared_ast = _wsvQuery->getAsset(query.asset_id);
-  auto ast = shared_ast | [&](auto &asset) {
-    return boost::make_optional(*std::unique_ptr<iroha::model::Asset>(asset->makeOldModel()));
-  };
+std::shared_ptr<shared_model::interface::QueryResponse>
+QueryProcessingFactory::executeGetAssetInfo(
+    const shared_model::interface::GetAssetInfo &query,
+    const shared_model::interface::types::HashType &hash) {
+  auto ast = _wsvQuery->getAsset(query.assetId());
+
   if (not ast) {
-    ErrorResponse response;
-    response.query_hash = iroha::hash(query);
-    response.reason = ErrorResponse::NO_ASSET;
-    return std::make_shared<ErrorResponse>(response);
+    return build_error<shared_model::interface::NoAssetErrorResponse>(hash);
   }
-  AssetResponse response;
-  response.asset = std::move(ast.value());
-  response.query_hash = iroha::hash(query);
-  return std::make_shared<AssetResponse>(response);
+
+  const auto &asset = **ast;
+  auto response =
+      QueryResponseBuilder()
+          .assetResponse(asset.assetId(), asset.domainId(), asset.precision())
+          .queryHash(hash)
+          .build();
+  return clone(response);
 }
 
-std::shared_ptr<QueryResponse> QueryProcessingFactory::executeGetRoles(
-    const model::GetRoles &query) {
+std::shared_ptr<shared_model::interface::QueryResponse>
+QueryProcessingFactory::executeGetRoles(
+    const shared_model::interface::GetRoles &query,
+    const shared_model::interface::types::HashType &hash) {
   auto roles = _wsvQuery->getRoles();
   if (not roles) {
-    ErrorResponse response;
-    response.query_hash = iroha::hash(query);
-    response.reason = ErrorResponse::NO_ROLES;
-    return std::make_shared<ErrorResponse>(response);
+    return build_error<shared_model::interface::NoRolesErrorResponse>(hash);
   }
-  RolesResponse response;
-  response.query_hash = iroha::hash(query);
-  response.roles = std::move(roles.value());
-  return std::make_shared<RolesResponse>(response);
+  auto response =
+      QueryResponseBuilder().rolesResponse(*roles).queryHash(hash).build();
+  return clone(response);
 }
 
-std::shared_ptr<QueryResponse>
+std::shared_ptr<shared_model::interface::QueryResponse>
 QueryProcessingFactory::executeGetRolePermissions(
-    const model::GetRolePermissions &query) {
-  auto perm = _wsvQuery->getRolePermissions(query.role_id);
+    const shared_model::interface::GetRolePermissions &query,
+    const shared_model::interface::types::HashType &hash) {
+  auto perm = _wsvQuery->getRolePermissions(query.roleId());
   if (not perm) {
-    ErrorResponse response;
-    response.query_hash = iroha::hash(query);
-    response.reason = ErrorResponse::NO_ROLES;
-    return std::make_shared<ErrorResponse>(response);
+    return build_error<shared_model::interface::NoRolesErrorResponse>(hash);
   }
-  RolePermissionsResponse response;
-  response.query_hash = iroha::hash(query);
-  response.role_permissions = std::move(perm.value());
-  return std::make_shared<RolePermissionsResponse>(response);
+
+  auto response = QueryResponseBuilder()
+                      .rolePermissionsResponse(*perm)
+                      .queryHash(hash)
+                      .build();
+  return clone(response);
 }
 
-std::shared_ptr<QueryResponse> QueryProcessingFactory::executeGetAccount(
-    const model::GetAccount &query) {
-  auto shared_acc = _wsvQuery->getAccount(query.account_id);
-  auto acc = shared_acc | [](auto &account) {
-    return boost::make_optional(*std::unique_ptr<iroha::model::Account>(account->makeOldModel()));
-  };
+std::shared_ptr<shared_model::interface::QueryResponse>
+QueryProcessingFactory::executeGetAccount(
+    const shared_model::interface::GetAccount &query,
+    const shared_model::interface::types::HashType &hash) {
+  auto acc = _wsvQuery->getAccount(query.accountId());
 
-  auto roles = _wsvQuery->getAccountRoles(query.account_id);
+  auto roles = _wsvQuery->getAccountRoles(query.accountId());
   if (not acc or not roles) {
-    ErrorResponse response;
-    response.query_hash = iroha::hash(query);
-    response.reason = ErrorResponse::NO_ACCOUNT;
-    return std::make_shared<ErrorResponse>(response);
+    return build_error<shared_model::interface::NoAccountErrorResponse>(hash);
   }
 
-  AccountResponse response;
-  response.account = acc.value();
-  response.roles = roles.value();
-  response.query_hash = iroha::hash(query);
-  return std::make_shared<AccountResponse>(response);
+  auto account = std::static_pointer_cast<shared_model::proto::Account>(*acc);
+  auto response = QueryResponseBuilder()
+                      .accountResponse(*account, *roles)
+                      .queryHash(hash)
+                      .build();
+  return clone(response);
 }
 
-std::shared_ptr<QueryResponse> QueryProcessingFactory::executeGetAccountAssets(
-    const model::GetAccountAssets &query) {
-  auto shared_acct_asset =  _wsvQuery->getAccountAsset(query.account_id, query.asset_id);
-  auto acct_asset = shared_acct_asset | [](auto &account_asset) {
-    return boost::make_optional(*std::unique_ptr<iroha::model::AccountAsset>(account_asset->makeOldModel()));
-  };
+std::shared_ptr<shared_model::interface::QueryResponse>
+QueryProcessingFactory::executeGetAccountAssets(
+    const shared_model::interface::GetAccountAssets &query,
+    const shared_model::interface::types::HashType &hash) {
+  auto acct_asset =
+      _wsvQuery->getAccountAsset(query.accountId(), query.assetId());
 
-  if (!acct_asset) {
-    ErrorResponse response;
-    response.query_hash = iroha::hash(query);
-    response.reason = ErrorResponse::NO_ACCOUNT_ASSETS;
-    return std::make_shared<ErrorResponse>(response);
+  if (not acct_asset) {
+    return build_error<shared_model::interface::NoAccountAssetsErrorResponse>(
+        hash);
   }
-  AccountAssetResponse response;
-  response.acct_asset = acct_asset.value();
-  response.query_hash = iroha::hash(query);
-  return std::make_shared<AccountAssetResponse>(response);
+
+  const auto &account_asset = **acct_asset;
+  auto response = QueryResponseBuilder()
+                      .accountAssetResponse(account_asset.assetId(),
+                                            account_asset.accountId(),
+                                            account_asset.balance())
+                      .queryHash(hash)
+                      .build();
+  return clone(response);
 }
 
-std::shared_ptr<iroha::model::QueryResponse>
+std::shared_ptr<shared_model::interface::QueryResponse>
 iroha::model::QueryProcessingFactory::executeGetAccountDetail(
-    const model::GetAccountDetail &query) {
-  auto acct_detail = _wsvQuery->getAccountDetail(query.account_id);
-  if (!acct_detail) {
-    iroha::model::ErrorResponse response;
-    response.query_hash = iroha::hash(query);
-    response.reason = iroha::model::ErrorResponse::NO_ACCOUNT_DETAIL;
-    return std::make_shared<iroha::model::ErrorResponse>(response);
+    const shared_model::interface::GetAccountDetail &query,
+    const shared_model::interface::types::HashType &hash) {
+  auto acct_detail = _wsvQuery->getAccountDetail(query.accountId());
+  if (not acct_detail) {
+    return build_error<shared_model::interface::NoAccountDetailErrorResponse>(
+        hash);
   }
-  iroha::model::AccountDetailResponse response;
-  response.detail = acct_detail.value();
-  response.query_hash = iroha::hash(query);
-  return std::make_shared<iroha::model::AccountDetailResponse>(response);
+  auto response = QueryResponseBuilder()
+                      .accountDetailResponse(*acct_detail)
+                      .queryHash(hash)
+                      .build();
+  return clone(response);
 }
 
-std::shared_ptr<iroha::model::QueryResponse>
+std::shared_ptr<shared_model::interface::QueryResponse>
 iroha::model::QueryProcessingFactory::executeGetAccountAssetTransactions(
-    const model::GetAccountAssetTransactions &query) {
-  auto acc_asset_tx = _blockQuery->getAccountAssetTransactions(query.account_id,
-                                                               query.asset_id);
-  TransactionsResponse response;
-  response.query_hash = iroha::hash(query);
-  response.transactions = acc_asset_tx.map([](const auto &tx) {
-    return *std::unique_ptr<iroha::model::Transaction>(tx->makeOldModel());
-  });
-  return std::make_shared<TransactionsResponse>(response);
+    const shared_model::interface::GetAccountAssetTransactions &query,
+    const shared_model::interface::types::HashType &hash) {
+  auto acc_asset_tx = _blockQuery->getAccountAssetTransactions(
+      query.accountId(), query.assetId());
+
+  auto tmp =
+      acc_asset_tx
+          .reduce(std::vector<
+                      std::shared_ptr<shared_model::interface::Transaction>>{},
+                  [](auto &&vec, const auto &tx) {
+                    vec.push_back(tx);
+                    return vec;
+                  },
+                  [](auto &&response) { return response; })
+          .as_blocking()
+          .first();
+
+  std::vector<shared_model::proto::Transaction> txs;
+  for (const auto &tx : tmp) {
+    txs.push_back(
+        *std::static_pointer_cast<shared_model::proto::Transaction>(tx));
+  }
+
+  auto response =
+      QueryResponseBuilder().transactionsResponse(txs).queryHash(hash).build();
+  return clone(response);
 }
 
-std::shared_ptr<QueryResponse>
+std::shared_ptr<shared_model::interface::QueryResponse>
 QueryProcessingFactory::executeGetAccountTransactions(
-    const model::GetAccountTransactions &query) {
-  auto acc_tx = _blockQuery->getAccountTransactions(query.account_id);
-  TransactionsResponse response;
-  response.query_hash = iroha::hash(query);
-  response.transactions = acc_tx.map([](const auto &tx) {
-    return *std::unique_ptr<iroha::model::Transaction>(tx->makeOldModel());
-  });
-  return std::make_shared<TransactionsResponse>(response);
+    const shared_model::interface::GetAccountTransactions &query,
+    const shared_model::interface::types::HashType &hash) {
+  auto acc_tx = _blockQuery->getAccountTransactions(query.accountId());
+
+  auto tmp =
+      acc_tx
+          .reduce(std::vector<
+                      std::shared_ptr<shared_model::interface::Transaction>>{},
+                  [](auto &&vec, const auto &tx) {
+                    vec.push_back(tx);
+                    return vec;
+                  },
+                  [](auto &&response) { return response; })
+          .as_blocking()
+          .first();
+
+  std::vector<shared_model::proto::Transaction> txs;
+  for (const auto &tx : tmp) {
+    txs.push_back(
+        *std::static_pointer_cast<shared_model::proto::Transaction>(tx));
+  }
+
+  auto response =
+      QueryResponseBuilder().transactionsResponse(txs).queryHash(hash).build();
+  return clone(response);
 }
 
-std::shared_ptr<iroha::model::QueryResponse>
+std::shared_ptr<shared_model::interface::QueryResponse>
 iroha::model::QueryProcessingFactory::executeGetTransactions(
-    const model::GetTransactions &query) {
-  std::vector<shared_model::crypto::Hash> hashes;
-  std::transform(
-      query.tx_hashes.begin(),
-      query.tx_hashes.end(),
-      std::back_inserter(hashes),
-      [](const auto &h) { return shared_model::crypto::Hash(h.to_string()); });
-  auto txs = _blockQuery->getTransactions(hashes);
-  std::vector<iroha::model::Transaction> transactions;
-  txs.subscribe([&transactions](auto const &tx_opt) {
-    if (tx_opt) {
-      transactions.push_back(*std::unique_ptr<iroha::model::Transaction>(
-          (*tx_opt)->makeOldModel()));
-    }
-  });
-  iroha::model::TransactionsResponse response;
-  response.query_hash = iroha::hash(query);
-  response.transactions = rxcpp::observable<>::iterate(transactions);
-  return std::make_shared<iroha::model::TransactionsResponse>(response);
+    const shared_model::interface::GetTransactions &query,
+    const shared_model::interface::types::HashType &hash) {
+  const std::vector<shared_model::crypto::Hash> &hashes =
+      query.transactionHashes();
+
+  auto transactions = _blockQuery->getTransactions(hashes);
+
+  auto tmp =
+      transactions
+          .reduce(std::vector<
+                      std::shared_ptr<shared_model::interface::Transaction>>{},
+                  [](auto &&vec, const auto &tx) {
+                    if (tx) {
+                      vec.push_back(*tx);
+                    }
+                    return vec;
+                  },
+                  [](auto &&response) { return response; })
+          .as_blocking()
+          .first();
+
+  std::vector<shared_model::proto::Transaction> txs;
+  for (const auto &tx : tmp) {
+    txs.push_back(
+        *std::static_pointer_cast<shared_model::proto::Transaction>(tx));
+  }
+  auto response =
+      QueryResponseBuilder().transactionsResponse(txs).queryHash(hash).build();
+  return clone(response);
 }
 
-std::shared_ptr<QueryResponse> QueryProcessingFactory::executeGetSignatories(
-    const model::GetSignatories &query) {
-  auto signs = _wsvQuery->getSignatories(query.account_id);
-  if (!signs) {
-    ErrorResponse response;
-    response.query_hash = iroha::hash(query);
-    response.reason = model::ErrorResponse::NO_SIGNATORIES;
-    return std::make_shared<ErrorResponse>(response);
+std::shared_ptr<shared_model::interface::QueryResponse>
+QueryProcessingFactory::executeGetSignatories(
+    const shared_model::interface::GetSignatories &query,
+    const shared_model::interface::types::HashType &hash) {
+  auto signs = _wsvQuery->getSignatories(query.accountId());
+  if (not signs) {
+    return build_error<shared_model::interface::NoSignatoriesErrorResponse>(
+        hash);
   }
-  SignatoriesResponse response;
-  response.query_hash = iroha::hash(query);
-  std::for_each(signs.value().begin(), signs.value().end(), [&response](const auto &key) {
-    response.keys.emplace_back(
-        key.template makeOldModel<iroha::pubkey_t>());
-  });
-  return std::make_shared<SignatoriesResponse>(response);
+  auto response = QueryResponseBuilder()
+                      .signatoriesResponse(*signs)
+                      .queryHash(hash)
+                      .build();
+  return clone(response);
 }
 
-std::shared_ptr<QueryResponse> QueryProcessingFactory::execute(
-    std::shared_ptr<const model::Query> query) {
-  // TODO: 03.02.2018 grimadas IR-936 change to handler map or/with templates #VARIANT
-  if (instanceof <GetAccount>(query.get())) {
-    auto qry = std::static_pointer_cast<const GetAccount>(query);
+std::shared_ptr<shared_model::interface::QueryResponse>
+QueryProcessingFactory::execute(const shared_model::interface::Query &query) {
+  const auto &query_hash = query.hash();
+  return visit_in_place(
+      query.get(),
+      [&](const w<shared_model::interface::GetAccount> &get_account) {
+        if (not validate(query, *get_account)) {
+          return build_error<
+              shared_model::interface::StatefulFailedErrorResponse>(query_hash);
+        }
+        return executeGetAccount(*get_account, query_hash);
+      },
+      [&](const auto &other) {
+        return build_error<
+            shared_model::interface::StatefulFailedErrorResponse>(query_hash);
+        ;
+      }
 
-    if (!validate(*qry)) {
-      ErrorResponse response;
-      response.query_hash = iroha::hash(*qry);
-      response.reason = model::ErrorResponse::STATEFUL_INVALID;
-      return std::make_shared<ErrorResponse>(response);
-    }
-    return executeGetAccount(*qry);
-  }
-  if (instanceof <GetAccountAssets>(query.get())) {
-    auto qry = std::static_pointer_cast<const GetAccountAssets>(query);
-    if (!validate(*qry)) {
-      ErrorResponse response;
-      response.query_hash = iroha::hash(*qry);
-      response.reason = model::ErrorResponse::STATEFUL_INVALID;
-      return std::make_shared<ErrorResponse>(response);
-    }
-    return executeGetAccountAssets(*qry);
-  }
-  if (instanceof <iroha::model::GetAccountDetail>(query.get())) {
-    auto qry =
-        std::static_pointer_cast<const iroha::model::GetAccountDetail>(query);
-    if (!validate(*qry)) {
-      iroha::model::ErrorResponse response;
-      response.query_hash = iroha::hash(*qry);
-      response.reason = model::ErrorResponse::STATEFUL_INVALID;
-      return std::make_shared<iroha::model::ErrorResponse>(response);
-    }
-    return executeGetAccountDetail(*qry);
-  }
-  if (instanceof <iroha::model::GetSignatories>(query.get())) {
-    auto qry = std::static_pointer_cast<const GetSignatories>(query);
-    if (!validate(*qry)) {
-      ErrorResponse response;
-      response.query_hash = iroha::hash(*qry);
-      response.reason = model::ErrorResponse::STATEFUL_INVALID;
-      return std::make_shared<ErrorResponse>(response);
-    }
-    return executeGetSignatories(*qry);
-  }
-  if (instanceof <GetAccountTransactions>(query.get())) {
-    auto qry = std::static_pointer_cast<const GetAccountTransactions>(query);
-    if (!validate(*qry)) {
-      ErrorResponse response;
-      response.query_hash = iroha::hash(*qry);
-      response.reason = model::ErrorResponse::STATEFUL_INVALID;
-      return std::make_shared<ErrorResponse>(response);
-    }
-    return executeGetAccountTransactions(*qry);
-  }
-  if (instanceof <GetAccountAssetTransactions>(query.get())) {
-    auto qry =
-        std::static_pointer_cast<const GetAccountAssetTransactions>(query);
-    if (!validate(*qry)) {
-      ErrorResponse response;
-      response.query_hash = iroha::hash(*qry);
-      response.reason = model::ErrorResponse::STATEFUL_INVALID;
-      return std::make_shared<ErrorResponse>(response);
-    }
-    return executeGetAccountAssetTransactions(*qry);
-  }
-  if (instanceof <GetTransactions>(query.get())) {
-    auto qry = std::static_pointer_cast<const GetTransactions>(query);
-    if (not validate(*qry)) {
-      ErrorResponse response;
-      response.query_hash = iroha::hash(*qry);
-      response.reason = ErrorResponse::STATEFUL_INVALID;
-      return std::make_shared<ErrorResponse>(response);
-    }
-    return executeGetTransactions(*qry);
-  }
-  if (instanceof <GetRoles>(query.get())) {
-    auto qry = std::static_pointer_cast<const GetRoles>(query);
-    if (not validate(*qry)) {
-      ErrorResponse response;
-      response.query_hash = iroha::hash(*qry);
-      response.reason = ErrorResponse::STATEFUL_INVALID;
-      return std::make_shared<ErrorResponse>(response);
-    }
-    return executeGetRoles(*qry);
-  }
-  if (instanceof <GetRolePermissions>(query.get())) {
-    auto qry = std::static_pointer_cast<const GetRolePermissions>(query);
-    if (not validate(*qry)) {
-      ErrorResponse response;
-      response.query_hash = iroha::hash(*qry);
-      response.reason = ErrorResponse::STATEFUL_INVALID;
-      return std::make_shared<ErrorResponse>(response);
-    }
-    return executeGetRolePermissions(*qry);
-  }
-  if (instanceof <GetAssetInfo>(query.get())) {
-    auto qry = std::static_pointer_cast<const GetAssetInfo>(query);
-    if (not validate(*qry)) {
-      ErrorResponse response;
-      response.query_hash = iroha::hash(*qry);
-      response.reason = ErrorResponse::STATEFUL_INVALID;
-      return std::make_shared<ErrorResponse>(response);
-    }
-    return executeGetAssetInfo(*qry);
-  }
-  ErrorResponse response;
-  response.query_hash = iroha::hash(*query);
-  response.reason = model::ErrorResponse::NOT_SUPPORTED;
-  return std::make_shared<ErrorResponse>(response);
+  );
 }
