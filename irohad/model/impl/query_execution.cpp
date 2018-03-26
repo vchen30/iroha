@@ -417,17 +417,75 @@ QueryProcessingFactory::execute(const shared_model::interface::Query &query) {
   const auto &query_hash = query.hash();
   return visit_in_place(
       query.get(),
-      [&](const w<shared_model::interface::GetAccount> &get_account) {
-        if (not validate(query, *get_account)) {
+      [&](const w<shared_model::interface::GetAccount> &q) {
+        if (not validate(query, *q)) {
           return build_error<
               shared_model::interface::StatefulFailedErrorResponse>(query_hash);
         }
-        return executeGetAccount(*get_account, query_hash);
+        return executeGetAccount(*q, query_hash);
       },
-      [&](const auto &other) {
-        return build_error<
-            shared_model::interface::StatefulFailedErrorResponse>(query_hash);
-        ;
+      [&](const w<shared_model::interface::GetSignatories> &q) {
+        if (not validate(query, *q)) {
+          return build_error<
+              shared_model::interface::StatefulFailedErrorResponse>(query_hash);
+        }
+        return executeGetSignatories(*q, query_hash);
+      },
+      [&](const w<shared_model::interface::GetAccountTransactions> &q) {
+        if (not validate(query, *q)) {
+          return build_error<
+              shared_model::interface::StatefulFailedErrorResponse>(query_hash);
+        }
+        return executeGetAccountTransactions(*q, query_hash);
+      },
+      [&](const w<shared_model::interface::GetTransactions> &q) {
+        if (not validate(query, *q)) {
+          return build_error<
+              shared_model::interface::StatefulFailedErrorResponse>(query_hash);
+        }
+        return executeGetTransactions(*q, query_hash);
+      },
+      [&](const w<shared_model::interface::GetAccountAssetTransactions> &q) {
+        if (not validate(query, *q)) {
+          return build_error<
+              shared_model::interface::StatefulFailedErrorResponse>(query_hash);
+        }
+        return executeGetAccountAssetTransactions(*q, query_hash);
+      },
+      [&](const w<shared_model::interface::GetAccountAssets> &q) {
+        if (not validate(query, *q)) {
+          return build_error<
+              shared_model::interface::StatefulFailedErrorResponse>(query_hash);
+        }
+        return executeGetAccountAssets(*q, query_hash);
+      },
+      [&](const w<shared_model::interface::GetAccountDetail> &q) {
+        if (not validate(query, *q)) {
+          return build_error<
+              shared_model::interface::StatefulFailedErrorResponse>(query_hash);
+        }
+        return executeGetAccountDetail(*q, query_hash);
+      },
+      [&](const w<shared_model::interface::GetRoles> &q) {
+        if (not validate(query, *q)) {
+          return build_error<
+              shared_model::interface::StatefulFailedErrorResponse>(query_hash);
+        }
+        return executeGetRoles(*q, query_hash);
+      },
+      [&](const w<shared_model::interface::GetRolePermissions> &q) {
+        if (not validate(query, *q)) {
+          return build_error<
+              shared_model::interface::StatefulFailedErrorResponse>(query_hash);
+        }
+        return executeGetRolePermissions(*q, query_hash);
+      },
+      [&](const w<shared_model::interface::GetAssetInfo> &q) {
+        if (not validate(query, *q)) {
+          return build_error<
+              shared_model::interface::StatefulFailedErrorResponse>(query_hash);
+        }
+        return executeGetAssetInfo(*q, query_hash);
       }
 
   );
