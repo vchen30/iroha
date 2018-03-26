@@ -23,7 +23,6 @@
 namespace iroha {
   namespace torii {
 
-    using model::TransactionResponse;
     using network::PeerCommunicationService;
 
     TransactionProcessorImpl::TransactionProcessorImpl(
