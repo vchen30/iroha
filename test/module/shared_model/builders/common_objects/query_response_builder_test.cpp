@@ -61,7 +61,6 @@ TEST(QueryResponseBuilderTest, AccountAssetResponse) {
       query_response.get());
   const auto &asset_response = tmp->accountAsset();
 
-
   ASSERT_EQ(asset_response.assetId(), asset_id);
   ASSERT_EQ(asset_response.accountId(), account_id);
   ASSERT_EQ(asset_response.balance(), proto_amount);
@@ -313,7 +312,7 @@ TEST(QueryResponseBuilderTest, NoRolesErrorResponse) {
 }
 
 TEST(QueryResponseBuilderTest, SignatoriesResponse) {
-  std::vector<shared_model::interface::types::PubkeyType > keys = {
+  std::vector<shared_model::interface::types::PubkeyType> keys = {
       shared_model::interface::types::PubkeyType("key1"),
       shared_model::interface::types::PubkeyType("key1"),
       shared_model::interface::types::PubkeyType("key1")};
