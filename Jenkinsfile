@@ -157,8 +157,9 @@ pipeline {
             script {
               def coverageEnabled = false
               def cmakeOptions = ""
+              // TODO: replace with true before merge
               if (!params.Linux) {
-                coverageEnabled = true
+                coverageEnabled = false
                 cmakeOptions = " -DCOVERAGE=ON "
               }
               def scmVars = checkout scm
