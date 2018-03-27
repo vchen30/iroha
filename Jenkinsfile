@@ -12,7 +12,7 @@
 //   |            |----Release
 properties([parameters([
   choice(choices: 'Debug\nRelease', description: '', name: 'BUILD_TYPE'),
-  booleanParam(defaultValue: true, description: '', name: 'Linux'),
+  booleanParam(defaultValue: false, description: '', name: 'Linux'),
   booleanParam(defaultValue: false, description: '', name: 'ARMv7'),
   booleanParam(defaultValue: false, description: '', name: 'ARMv8'),
   booleanParam(defaultValue: true, description: '', name: 'MacOS'),
@@ -222,11 +222,10 @@ pipeline {
           post {
             success {
               script {
-                sh "for i in `ls -d build/bin/*`; do echo put \$i /files >> batch.txt;done"
-                sshagent(['jenkins-artifact']) {
-                  sh "ssh-agent"
-                  sh "sftp -b batch.txt jenkins@54.76.154.71"
-                }
+                def artifacts = load ".jenkinsci/artifacts.groovy"
+                def filePaths = sh(script: 'for i in `ls -d \$(pwd)/build/bin/*`; do FILES=\${i},\${FILES};done;echo $FILES', returnStdout: true).trim()
+                filePaths = uploadFiles.split(',')
+                artifacts.uploadArtifacts(filePaths=filePaths, agentType='MacOS', platform='Darwin')
               }
             }
             always {
