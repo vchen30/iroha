@@ -311,23 +311,11 @@ iroha::model::QueryProcessingFactory::executeGetAccountAssetTransactions(
   auto acc_asset_tx = _blockQuery->getAccountAssetTransactions(
       query.accountId(), query.assetId());
 
-  auto tmp =
-      acc_asset_tx
-          .reduce(std::vector<
-                      std::shared_ptr<shared_model::interface::Transaction>>{},
-                  [](auto &&vec, const auto &tx) {
-                    vec.push_back(tx);
-                    return vec;
-                  },
-                  [](auto &&response) { return response; })
-          .as_blocking()
-          .first();
-
   std::vector<shared_model::proto::Transaction> txs;
-  for (const auto &tx : tmp) {
+  acc_asset_tx.subscribe([&](const auto &tx) {
     txs.push_back(
         *std::static_pointer_cast<shared_model::proto::Transaction>(tx));
-  }
+  });
 
   auto response =
       QueryResponseBuilder().transactionsResponse(txs).queryHash(hash).build();
@@ -340,23 +328,11 @@ QueryProcessingFactory::executeGetAccountTransactions(
     const shared_model::interface::types::HashType &hash) {
   auto acc_tx = _blockQuery->getAccountTransactions(query.accountId());
 
-  auto tmp =
-      acc_tx
-          .reduce(std::vector<
-                      std::shared_ptr<shared_model::interface::Transaction>>{},
-                  [](auto &&vec, const auto &tx) {
-                    vec.push_back(tx);
-                    return vec;
-                  },
-                  [](auto &&response) { return response; })
-          .as_blocking()
-          .first();
-
   std::vector<shared_model::proto::Transaction> txs;
-  for (const auto &tx : tmp) {
+  acc_tx.subscribe([&](const auto &tx) {
     txs.push_back(
         *std::static_pointer_cast<shared_model::proto::Transaction>(tx));
-  }
+  });
 
   auto response =
       QueryResponseBuilder().transactionsResponse(txs).queryHash(hash).build();
@@ -372,25 +348,14 @@ iroha::model::QueryProcessingFactory::executeGetTransactions(
 
   auto transactions = _blockQuery->getTransactions(hashes);
 
-  auto tmp =
-      transactions
-          .reduce(std::vector<
-                      std::shared_ptr<shared_model::interface::Transaction>>{},
-                  [](auto &&vec, const auto &tx) {
-                    if (tx) {
-                      vec.push_back(*tx);
-                    }
-                    return vec;
-                  },
-                  [](auto &&response) { return response; })
-          .as_blocking()
-          .first();
-
   std::vector<shared_model::proto::Transaction> txs;
-  for (const auto &tx : tmp) {
-    txs.push_back(
-        *std::static_pointer_cast<shared_model::proto::Transaction>(tx));
-  }
+  transactions.subscribe([&](const auto &tx) {
+    if (tx) {
+      txs.push_back(
+          *std::static_pointer_cast<shared_model::proto::Transaction>(*tx));
+    }
+  });
+
   auto response =
       QueryResponseBuilder().transactionsResponse(txs).queryHash(hash).build();
   return clone(response);
