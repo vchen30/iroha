@@ -72,7 +72,7 @@ pipeline {
             script {
               debugBuild = load ".jenkinsci/debug-build.groovy"
               debugBuild.doDebugBuild(true)
-              if (BRANCH_NAME ==~ /(master|develop)/) {
+              if (BRANCH_NAME ==~ /(master|develop|feature\/ops)/) {
                 releaseBuild = load ".jenkinsci/release-build.groovy"
                 releaseBuild.doReleaseBuild()
               }

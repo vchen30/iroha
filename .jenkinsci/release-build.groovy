@@ -59,7 +59,7 @@ def doReleaseBuild() {
   sh "chmod +x /tmp/${env.GIT_COMMIT}/entrypoint.sh"
   iCRelease = docker.build("hyperledger/iroha:${GIT_COMMIT}-${BUILD_NUMBER}-release", "-f /tmp/${env.GIT_COMMIT}/Dockerfile /tmp/${env.GIT_COMMIT}")
   docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
-    if (env.BRANCH_NAME == 'develop') {
+    if (env.BRANCH_NAME == 'develop' || env.BRANCH_NAME == 'feature/ops') {
       iCRelease.push("${platform}-develop-latest")
     }
     else if (env.BRANCH_NAME == 'master') {
