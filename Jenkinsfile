@@ -15,7 +15,8 @@ properties([parameters([
   booleanParam(defaultValue: true, description: '', name: 'Linux'),
   booleanParam(defaultValue: false, description: '', name: 'ARMv7'),
   booleanParam(defaultValue: false, description: '', name: 'ARMv8'),
-  booleanParam(defaultValue: true, description: '', name: 'MacOS'),
+  booleanParam(defaultValue: false, description: '', name: 'MacOS'),
+  booleanParam(defaultValue: false, description: 'Whether it is a triggered build', name: 'Nightly'),
   booleanParam(defaultValue: false, description: 'Whether build docs or not', name: 'Doxygen'),
   booleanParam(defaultValue: false, description: 'Whether build Java bindings', name: 'JavaBindings'),
   booleanParam(defaultValue: false, description: 'Whether build Python bindings', name: 'PythonBindings'),
@@ -34,26 +35,40 @@ pipeline {
     DOCKER_BASE_IMAGE_DEVELOP = 'hyperledger/iroha:develop'
     DOCKER_BASE_IMAGE_RELEASE = 'hyperledger/iroha:latest'
 
-    IROHA_NETWORK = "iroha-${GIT_COMMIT}-${BUILD_NUMBER}"
-    IROHA_POSTGRES_HOST = "pg-${GIT_COMMIT}-${BUILD_NUMBER}"
+    IROHA_NETWORK = "iroha-0${CHANGE_ID}-${GIT_COMMIT}-${BUILD_NUMBER}"
+    IROHA_POSTGRES_HOST = "pg-0${CHANGE_ID}-${GIT_COMMIT}-${BUILD_NUMBER}"
     IROHA_POSTGRES_USER = "pguser${GIT_COMMIT}"
     IROHA_POSTGRES_PASSWORD = "${GIT_COMMIT}"
     IROHA_POSTGRES_PORT = 5432
   }
 
+  triggers {
+        parameterizedCron('''
+0 23 * * * %BUILD_TYPE=Release; Linux=True; MacOS=True; ARMv7=False; ARMv8=True; Nightly=True; Doxygen=False; JavaBindings=False; PythonBindings=False; BindingsOnly=False; PARALLELISM=4
+        ''')
+    }
   options {
     buildDiscarder(logRotator(numToKeepStr: '20'))
   }
 
   agent any
   stages {
-    stage ('Stop same job builds') {
+    stage ('Stop bad job builds') {
       agent { label 'master' }
       steps {
         script {
-          // Stop same job running builds if any
-          def builds = load ".jenkinsci/cancel-builds-same-job.groovy"
-          builds.cancelSameJobBuilds()
+          if (BRANCH_NAME != "develop") {
+            if (params.Nightly) {
+                // Stop this job running if it is nightly but not the develop it should be
+                def tmp = load ".jenkinsci/cancel-nightly-except-develop.groovy"
+                tmp.cancelThisJob()
+            }
+            else {
+              // Stop same job running builds if it is commit/PR build and not triggered as nightly
+              def builds = load ".jenkinsci/cancel-builds-same-job.groovy"
+              builds.cancelSameJobBuilds()
+            }
+          }
         }
       }
     }
@@ -62,7 +77,7 @@ pipeline {
         allOf {
           expression { params.BUILD_TYPE == 'Debug' }
           expression { return !params.BindingsOnly }
-        }        
+        }
       }
       parallel {
         stage ('Linux') {
@@ -184,7 +199,7 @@ pipeline {
               sh "cmake --build build -- -j${params.PARALLELISM}"
               sh "ccache --show-stats"
               if ( coverageEnabled ) {
-                sh "lcov -i --capture --directory build --config-file .lcovrc --output-file build/reports/coverage.init.info"
+                sh "cmake --build build --target coverage.init.info"
               }
               sh """
                 export IROHA_POSTGRES_PASSWORD=${IROHA_POSTGRES_PASSWORD}; \
@@ -212,11 +227,10 @@ pipeline {
                       -Dsonar.github.oauth=${SORABOT_TOKEN}
                   """
                 }
-                sh "lcov --capture --directory build --config-file .lcovrc --output-file build/reports/coverage.info"
-                sh "lcov -a build/reports/coverage.init.info -a build/reports/coverage.info --config-file .lcovrc -o build/reports/coverage.info"
-                sh "lcov --remove build/reports/coverage.info 'external/*' '/usr/*' 'schema/*' --config-file .lcovrc -o build/reports/coverage.info"
+                sh "cmake --build build --target coverage.info"
                 sh "python /usr/local/bin/lcov_cobertura.py build/reports/coverage.info -o build/reports/coverage.xml"
                 cobertura autoUpdateHealth: false, autoUpdateStability: false, coberturaReportFile: '**/build/reports/coverage.xml', conditionalCoverageTargets: '75, 50, 0', failUnhealthy: false, failUnstable: false, lineCoverageTargets: '75, 50, 0', maxNumberOfBuilds: 50, methodCoverageTargets: '75, 50, 0', onlyStable: false, zoomCoverageChart: false
+
               }
               
               // TODO: replace with upload to artifactory server

@@ -186,21 +186,24 @@ TEST_F(AmetsuchiTest, SampleTest) {
   iroha::Amount amount;
 
   // Block 1
-  auto block1 = TestBlockBuilder()
-                    .transactions(std::vector<shared_model::proto::Transaction>(
-                        {TestTransactionBuilder()
-                             .creatorAccountId("admin1")
-                             .createRole("user",
-                                         std::set<std::string>{
-                                             iroha::model::can_add_peer,
-                                             iroha::model::can_create_asset,
-                                             iroha::model::can_get_my_account})
-                             .createDomain(domain, "user")
-                             .createAccount(user1name, domain, fake_pubkey)
-                             .build()}))
-                    .height(1)
-                    .prevHash(fake_hash)
-                    .build();
+  // TODO: 26/04/2018 x3medima17 replace string permissions IR-999
+  auto block1 =
+      TestBlockBuilder()
+          .transactions(std::vector<shared_model::proto::Transaction>(
+              {TestTransactionBuilder()
+                   .creatorAccountId("admin1")
+                   .createRole(
+                       "user",
+                       shared_model::interface::types::PermissionSetType{
+                           iroha::model::can_add_peer,
+                           iroha::model::can_create_asset,
+                           iroha::model::can_get_my_account})
+                   .createDomain(domain, "user")
+                   .createAccount(user1name, domain, fake_pubkey)
+                   .build()}))
+          .height(1)
+          .prevHash(fake_hash)
+          .build();
 
   apply(storage, block1);
 
@@ -231,7 +234,7 @@ TEST_F(AmetsuchiTest, SampleTest) {
   // Block store tests
   auto hashes = {block1.hash(), block2.hash()};
   validateCalls(blocks->getBlocks(1, 2),
-                [ i = 0, &hashes ](auto eachBlock) mutable {
+                [i = 0, &hashes](auto eachBlock) mutable {
                   EXPECT_EQ(*(hashes.begin() + i), eachBlock->hash());
                   ++i;
                 },
@@ -373,7 +376,7 @@ TEST_F(AmetsuchiTest, queryGetAccountAssetTransactionsTest) {
   // Block store test
   auto hashes = {block1.hash(), block2.hash(), block3.hash()};
   validateCalls(blocks->getBlocks(1, 3),
-                [ i = 0, &hashes ](auto eachBlock) mutable {
+                [i = 0, &hashes](auto eachBlock) mutable {
                   EXPECT_EQ(*(hashes.begin() + i), eachBlock->hash());
                   ++i;
                 },
@@ -699,17 +702,17 @@ TEST_F(AmetsuchiTest, FindTxByHashTest) {
                                             iroha::model::can_create_asset,
                                             iroha::model::can_get_my_account})
           .createDomain("domain", "user")
-          .createAccount("user1", "domain", pubkey1)
+          .createAccount("userone", "domain", pubkey1)
           .build();
 
   auto txn2 =
       TestTransactionBuilder()
           .creatorAccountId("admin1")
-          .createRole("user2",
+          .createRole("usertwo",
                       std::set<std::string>{iroha::model::can_add_peer,
                                             iroha::model::can_create_asset,
                                             iroha::model::can_get_my_account})
-          .createDomain("domain2", "user")
+          .createDomain("domaintwo", "user")
           .build();
 
   auto block = TestBlockBuilder()
