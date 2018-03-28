@@ -19,30 +19,16 @@
 #include "module/shared_model/builders/protobuf/test_transaction_builder.hpp"
 
 #include "builders/common_objects/account_asset_builder.hpp"
-#include "builders/common_objects/account_builder.hpp"
 #include "builders/common_objects/amount_builder.hpp"
 #include "builders/common_objects/asset_builder.hpp"
-#include "builders/common_objects/peer_builder.hpp"
-#include "builders/common_objects/signature_builder.hpp"
 #include "builders/protobuf/common_objects/proto_account_asset_builder.hpp"
 #include "builders/protobuf/common_objects/proto_account_builder.hpp"
 #include "builders/protobuf/common_objects/proto_amount_builder.hpp"
 #include "builders/protobuf/common_objects/proto_asset_builder.hpp"
-#include "builders/protobuf/common_objects/proto_peer_builder.hpp"
-#include "builders/protobuf/common_objects/proto_signature_builder.hpp"
-#include "builders/protobuf/queries.hpp"
 #include "framework/test_subscriber.hpp"
 #include "model/permissions.hpp"
-#include "model/queries/responses/account_assets_response.hpp"
-#include "model/queries/responses/account_response.hpp"
-#include "model/queries/responses/asset_response.hpp"
-#include "model/queries/responses/error_response.hpp"
-#include "model/queries/responses/roles_response.hpp"
-#include "model/queries/responses/signatories_response.hpp"
-#include "model/queries/responses/transactions_response.hpp"
 #include "model/query_execution.hpp"
 #include "module/shared_model/builders/protobuf/test_query_builder.hpp"
-#include "validators/field_validator.hpp"
 
 using ::testing::AllOf;
 using ::testing::AtLeast;
@@ -56,6 +42,7 @@ using namespace framework::test_subscriber;
 
 using wTransaction = std::shared_ptr<shared_model::interface::Transaction>;
 
+// TODO: 28/03/2018 x3medima17 remove poly wrapper, IR-1011
 template <class T>
 using w = shared_model::detail::PolymorphicWrapper<T>;
 

@@ -31,6 +31,8 @@
 #include "ametsuchi/block_query.hpp"
 #include "ametsuchi/wsv_query.hpp"
 
+#include "builders/protobuf/builder_templates/query_response_template.hpp"
+
 namespace shared_model {
   namespace interface {
     class QueryResponse;
@@ -45,6 +47,12 @@ namespace iroha {
      * Converting business objects to protobuf and vice versa
      */
     class QueryProcessingFactory {
+      using QueryResponseBuilder =
+          shared_model::proto::TemplateQueryResponseBuilder<0>;
+
+      using QueryResponseBuilderDone =
+          shared_model::proto::TemplateQueryResponseBuilder<1>;
+
      public:
       /**
        * Execute and validate query.
@@ -101,53 +109,35 @@ namespace iroha {
           const shared_model::interface::Query &query,
           const shared_model::interface::GetTransactions &get_transactions);
 
-      std::shared_ptr<shared_model::interface::QueryResponse>
-      executeGetAssetInfo(
-          const shared_model::interface::GetAssetInfo &get_asset_info,
-          const shared_model::interface::types::HashType &hash);
+      QueryResponseBuilderDone executeGetAssetInfo(
+          const shared_model::interface::GetAssetInfo &get_asset_info);
 
-      std::shared_ptr<shared_model::interface::QueryResponse> executeGetRoles(
-          const shared_model::interface::GetRoles &query,
-          const shared_model::interface::types::HashType &hash);
+      QueryResponseBuilderDone executeGetRoles(
+          const shared_model::interface::GetRoles &query);
 
-      std::shared_ptr<shared_model::interface::QueryResponse>
-      executeGetRolePermissions(
-          const shared_model::interface::GetRolePermissions &query,
-          const shared_model::interface::types::HashType &hash);
+      QueryResponseBuilderDone executeGetRolePermissions(
+          const shared_model::interface::GetRolePermissions &query);
 
-      std::shared_ptr<shared_model::interface::QueryResponse>
-      executeGetAccountAssets(
-          const shared_model::interface::GetAccountAssets &query,
-          const shared_model::interface::types::HashType &hash);
+      QueryResponseBuilderDone executeGetAccountAssets(
+          const shared_model::interface::GetAccountAssets &query);
 
-      std::shared_ptr<shared_model::interface::QueryResponse>
-      executeGetAccountDetail(
-          const shared_model::interface::GetAccountDetail &query,
-          const shared_model::interface::types::HashType &hash);
+      QueryResponseBuilderDone executeGetAccountDetail(
+          const shared_model::interface::GetAccountDetail &query);
 
-      std::shared_ptr<shared_model::interface::QueryResponse> executeGetAccount(
-          const shared_model::interface::GetAccount &query,
-          const shared_model::interface::types::HashType &hash);
+      QueryResponseBuilderDone executeGetAccount(
+          const shared_model::interface::GetAccount &query);
 
-      std::shared_ptr<shared_model::interface::QueryResponse>
-      executeGetSignatories(
-          const shared_model::interface::GetSignatories &query,
-          const shared_model::interface::types::HashType &hash);
+      QueryResponseBuilderDone executeGetSignatories(
+          const shared_model::interface::GetSignatories &query);
 
-      std::shared_ptr<shared_model::interface::QueryResponse>
-      executeGetAccountAssetTransactions(
-          const shared_model::interface::GetAccountAssetTransactions &query,
-          const shared_model::interface::types::HashType &hash);
+      QueryResponseBuilderDone executeGetAccountAssetTransactions(
+          const shared_model::interface::GetAccountAssetTransactions &query);
 
-      std::shared_ptr<shared_model::interface::QueryResponse>
-      executeGetAccountTransactions(
-          const shared_model::interface::GetAccountTransactions &query,
-          const shared_model::interface::types::HashType &hash);
+      QueryResponseBuilderDone executeGetAccountTransactions(
+          const shared_model::interface::GetAccountTransactions &query);
 
-      std::shared_ptr<shared_model::interface::QueryResponse>
-      executeGetTransactions(
-          const shared_model::interface::GetTransactions &query,
-          const shared_model::interface::types::HashType &hash);
+      QueryResponseBuilderDone executeGetTransactions(
+          const shared_model::interface::GetTransactions &query);
 
       std::shared_ptr<ametsuchi::WsvQuery> _wsvQuery;
       std::shared_ptr<ametsuchi::BlockQuery> _blockQuery;

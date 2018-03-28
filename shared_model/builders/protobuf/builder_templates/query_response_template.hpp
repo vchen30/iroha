@@ -39,6 +39,11 @@ namespace shared_model {
      */
     template <int S = 0>
     class TemplateQueryResponseBuilder {
+     public:
+      template <int Sp>
+      TemplateQueryResponseBuilder(TemplateQueryResponseBuilder<Sp> &&o)
+          : query_response_(std::move(o.query_response_)) {}
+
      private:
       template <int>
       friend class TemplateQueryResponseBuilder;
@@ -122,7 +127,7 @@ namespace shared_model {
         return queryResponseField([&](auto &proto_query_response) {
           iroha::protocol::AccountResponse *query_response =
               proto_query_response.mutable_account_response();
-          query_response->mutable_account()->CopyFrom((account.getTransport()));
+          query_response->mutable_account()->CopyFrom(account.getTransport());
           for (const auto &role : roles) {
             query_response->add_account_roles(role);
           }
