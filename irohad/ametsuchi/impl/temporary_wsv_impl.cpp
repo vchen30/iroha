@@ -19,8 +19,6 @@
 #include "ametsuchi/impl/postgres_wsv_command.hpp"
 #include "ametsuchi/impl/postgres_wsv_query.hpp"
 #include "amount/amount.hpp"
-#include "backend/protobuf/from_old_model.hpp"
-#include "model/account.hpp"
 
 namespace iroha {
   namespace ametsuchi {

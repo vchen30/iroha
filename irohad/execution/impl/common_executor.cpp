@@ -16,6 +16,7 @@
  */
 
 #include <algorithm>
+
 #include "common/types.hpp"
 #include "execution/common_executor.hpp"
 
