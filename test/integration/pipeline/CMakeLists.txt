@@ -27,7 +27,7 @@ target_link_libraries(tx_pipeline_integration_test_fixture
 addtest(tx_pipeline_integration_test tx_pipeline_integration_test.cpp)
 target_link_libraries(tx_pipeline_integration_test
     application
-    raw_block_insertion
+    raw_block_loader
     model_generators
     integration_framework
     shared_model_cryptography
@@ -39,7 +39,7 @@ target_link_libraries(tx_pipeline_integration_test
 addtest(transfer_asset_inter_domain_test transfer_asset_inter_domain_test.cpp)
 target_link_libraries(transfer_asset_inter_domain_test
     application
-    raw_block_insertion
+    raw_block_loader
     model_generators
     tx_pipeline_integration_test_fixture
   )
