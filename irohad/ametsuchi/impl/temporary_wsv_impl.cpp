@@ -16,6 +16,7 @@
  */
 
 #include "ametsuchi/impl/temporary_wsv_impl.hpp"
+
 #include "ametsuchi/impl/postgres_wsv_command.hpp"
 #include "ametsuchi/impl/postgres_wsv_query.hpp"
 #include "amount/amount.hpp"
