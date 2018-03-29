@@ -31,6 +31,14 @@ target_link_libraries(get_transactions_test
   shared_model_stateless_validation
   )
 
+addtest(add_asset_qty_test add_asset_qty_test.cpp)
+target_link_libraries(add_asset_qty_test
+  application
+  integration_framework
+  shared_model_proto_builders
+  shared_model_stateless_validation
+  )
+
 addtest(create_role_test create_role_test.cpp)
 target_link_libraries(create_role_test
   application
@@ -57,6 +65,14 @@ target_link_libraries(transfer_asset_test
 
 addtest(create_domain_test create_domain_test.cpp)
 target_link_libraries(create_domain_test
+  application
+  integration_framework
+  shared_model_proto_builders
+  shared_model_stateless_validation
+  )
+
+addtest(subtract_asset_qty_test subtract_asset_qty_test.cpp)
+target_link_libraries(subtract_asset_qty_test
   application
   integration_framework
   shared_model_proto_builders

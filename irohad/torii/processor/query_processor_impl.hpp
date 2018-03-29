@@ -21,7 +21,6 @@
 #include "ametsuchi/storage.hpp"
 #include "model/query_execution.hpp"
 #include "torii/processor/query_processor.hpp"
-#include "validation/stateless_validator.hpp"
 
 namespace iroha {
   namespace torii {
